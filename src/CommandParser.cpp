@@ -162,15 +162,23 @@ bool CommandParser::handle_show_info(std::string main_cmd, std::string sub_cmd, 
 		{
 		case NavPoint::RadioNavType::VOR:
 			std::cout << "  VOR: " << np.get_radio_frequency() << " MHz" << std::endl;
+			std::cout << "  " << np.get_name() << std::endl;
+			std::cout << "  magnetic variation: " << np.get_magnetic_variation().to_string(false) << std::endl;
+			std::cout << "  elevation: " << np.get_coordinate().elevation << " ft" << std::endl;
 			break;
 		case NavPoint::RadioNavType::VOR_DME:
 			std::cout << "  VOR+DME: " << np.get_radio_frequency() << " MHz" << std::endl;
+			std::cout << "  " << np.get_name() << std::endl;
+			std::cout << "  magnetic variation: " << np.get_magnetic_variation().to_string(false) << std::endl;
+			std::cout << "  elevation: " << np.get_coordinate().elevation << " ft" << std::endl;
 			break;
 		case NavPoint::RadioNavType::NDB:
 			std::cout << "  NDB: " << np.get_radio_frequency() << " kHz" << std::endl;
+			std::cout << "  " << np.get_name() << std::endl;
 			break;
 		case NavPoint::RadioNavType::DME:
 			std::cout << "  DME: " << np.get_radio_frequency() << " MHz" << std::endl;
+			std::cout << "  " << np.get_name() << std::endl;
 			break;
 		default:
 			break;
@@ -181,9 +189,19 @@ bool CommandParser::handle_show_info(std::string main_cmd, std::string sub_cmd, 
 	if (navdata_parser.get_airport_by_icao_id(parameters[0], airport))
 	{
 		std::cout << "airport: " << airport.get_icao_id() << " " << airport.get_icao_region() << " " << airport.get_coordinate().to_string() << std::endl;
+		std::cout << "  elevation: " << airport.get_coordinate().elevation << " ft" << std::endl;
+		std::cout << "  magnetic variation: " << airport.get_magnetic_variation().to_string(false) << std::endl;
+
 		for (Runway& rwy : airport.get_runways())
 		{
-			std::cout << "  " << rwy.get_name() << " " << rwy.get_course() << " " << rwy.get_length() << " ils: " << rwy.get_ils_freq() << std::endl;
+			if (rwy.get_ils_freq() != 0)
+			{				
+				std::cout << "  " << rwy.get_name() << " course:" << rwy.get_course() << " ils freq: " << rwy.get_ils_freq() << std::endl;
+			}
+			else
+			{
+				std::cout << "  " << rwy.get_name() << std::endl;
+			}
 		}
 	}
 	return true;
