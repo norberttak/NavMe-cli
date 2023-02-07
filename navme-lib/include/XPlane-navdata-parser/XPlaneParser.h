@@ -63,10 +63,11 @@ private:
 	std::string xplane_root_folder;
 	std::filesystem::path absolute_path(std::string root_folder, std::string nav_folder, std::string file_name);
 	void trim_line(std::string& line);
-	void parse_rwy_line(std::cmatch& m);
+	void parse_rwy_line(std::cmatch& m, Airport* apt_ptr);
 	void parse_proc_line(std::cmatch& m, std::string airport_iaco_id);
 	void parse_approach_proc_line(std::cmatch& m, std::string airport_iaco_id);
 	bool parse_airport_file(std::string airport_icao_code);
+	Airport* get_airport_ptr(std::string airport_icao_code);
 public:
 	XPlaneParser(std::string _xplane_root_folder);
 	bool parse_earth_fix_dat_file();
