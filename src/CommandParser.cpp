@@ -10,12 +10,16 @@
 
 bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	RelativePos rel_pos;
+	Coordinate last_point_coordinate;
+
 	std::cout << "#########################################" << std::endl;
 	std::cout << "departure:  " << flight_route.departure_airport.get_name() << flight_route.departure_airport.get_icao_id() << std::endl;
 	std::cout << "destination:" << flight_route.destination_airport.get_name() << flight_route.destination_airport.get_icao_id() << std::endl;
 
 	if (flight_route.departure_airport.get_icao_id() != "" && flight_route.destination_airport.get_icao_id() != "") {
-		RelativePos rel_pos;
+		last_point_coordinate = flight_route.departure_airport.get_coordinate();
+
 		Coordinate dest_coordinate = flight_route.destination_airport.get_coordinate();
 		flight_route.departure_airport.get_coordinate().get_relative_pos_to(dest_coordinate, rel_pos);
 		std::cout << "direct distance orthodrom: " << (int)rel_pos.dist_ortho << " km, " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm" << std::endl;
@@ -29,17 +33,37 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 		std::list<NavPoint> nav_points = navdata_parser.get_nav_points_by_icao_id(flight_route.sid.get_region(), np);
 		if (nav_points.size() == 0)
 			continue;
-		std::cout << "  " << nav_points.front().get_icao_id() << " " << nav_points.front().get_coordinate().to_string() << std::endl;
+		
+		//calculate relative position compared to previous nav point
+		nav_points.front().get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
+		last_point_coordinate = nav_points.front().get_coordinate();
+
+		std::cout << "  " 
+			<< std::setw(5) << std::setfill(' ') << nav_points.front().get_icao_id()
+			<< " " 
+			<< nav_points.front().get_coordinate().to_string() 
+			<< " " << (int)(rel_pos.dist_ortho* KM_TO_NM) << " nm"
+			<< std::endl;
 	}
 
+	int navpoint_index = 0;
 	std::cout << "enroute: " << std::endl;
 	for (auto& np : flight_route.enroute_points)
 	{
-		std::cout << "  " << np.get_icao_id() << " "
-			<< np.get_coordinate().to_string() << " "
-			<< np.get_name() << " "
-			<< (np.get_radio_frequency() == 0 ? "" : std::to_string(np.get_radio_frequency()))
+		//calculate relative position compared to previous nav point
+		np.get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
+		last_point_coordinate = np.get_coordinate();
+
+		std::cout << "  " << navpoint_index << ": " 
+			<< std::setw(5) << std::setfill(' ') << np.get_icao_id() << " "
+			<< np.get_coordinate().to_string() << " "			
+			<< " " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm"
 			<< std::endl;
+
+		if (np.get_radio_frequency() != 0)
+			std::cout << "    " << np.get_name() << " " << std::to_string(np.get_radio_frequency()) << std::endl;
+
+		navpoint_index++;
 	}
 
 	std::cout << "star: " << flight_route.star.get_name() << " " << flight_route.star.get_runway_name() << std::endl;
@@ -48,7 +72,17 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 		std::list<NavPoint> nav_points = navdata_parser.get_nav_points_by_icao_id(flight_route.star.get_region(), np);
 		if (nav_points.size() == 0)
 			continue;
-		std::cout << "  " << nav_points.front().get_icao_id() << " " << nav_points.front().get_coordinate().to_string() << std::endl;
+
+		//calculate relative position compared to previous nav point
+		nav_points.front().get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
+		last_point_coordinate = nav_points.front().get_coordinate();
+
+		std::cout << "  " 
+			<< std::setw(5) << std::setfill(' ') << nav_points.front().get_icao_id()
+			<< " " 
+			<< nav_points.front().get_coordinate().to_string() 
+			<< " " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm"
+			<< std::endl;
 	}
 
 	std::cout << "approach: " << flight_route.approach.get_name() << " " << flight_route.approach.get_runway_name() << std::endl;
@@ -57,7 +91,16 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 		std::list<NavPoint> nav_points = navdata_parser.get_nav_points_by_icao_id(flight_route.approach.get_region(), np);
 		if (nav_points.size() == 0)
 			continue;
-		std::cout << "  " << nav_points.front().get_icao_id() << " " << nav_points.front().get_coordinate().to_string() << std::endl;
+
+		//calculate relative position compared to previous nav point
+		nav_points.front().get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
+		last_point_coordinate = nav_points.front().get_coordinate();
+
+		std::cout << "  " 
+			<< nav_points.front().get_icao_id() 
+			<< " " << nav_points.front().get_coordinate().to_string() 
+			<< " " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm"
+			<< std::endl;
 	}
 
 	return true;
@@ -471,6 +514,10 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 	{
 		if (nav_point_id == "DCT")
 			continue;
+		
+		//airways has 4 letter identifiers. skip them.
+		if (nav_point_id.length() == 4)
+			continue;
 
 		nav_point_id = strip_nav_point_name(nav_point_id);
 		std::list<NavPoint> nav_points;
@@ -486,15 +533,26 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 		}
 
 		if (nav_points.size() > 1)
-		{
-			std::cout << "multiple nav points found. try to use \'--region <code>\' " << std::endl;
+		{			
 			for (auto& np : nav_points)
 			{
-				std::cout << "id:" << np.get_icao_id() << " name:" << np.get_name() << " region:" << np.get_icao_region() << std::endl;
+				std::cout << "  id:" << np.get_icao_id() << " name:" << np.get_name() << " region:" << np.get_icao_region() << std::endl;
 			}
-			return true;
-		}
 
+			std::cout << "multiple nav points found. please specify region code:" << std::endl;
+			std::string input_region;
+			std::cout << "? ";
+			std::getline(std::cin, input_region);
+			std::transform(input_region.begin(), input_region.end(), input_region.begin(), ::toupper);			
+			
+			nav_points = navdata_parser.get_nav_points_by_icao_id(input_region, nav_point_id);
+			if (nav_points.size() == 0)
+			{
+				std::cout << "unable to find navpoint " << nav_point_id << " regio " << input_region << std::endl;
+				return true;
+			}
+		}
+		
 		nav_points_to_add.emplace_back(nav_points.front());
 	}
 

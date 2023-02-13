@@ -13,7 +13,7 @@
 
 int main(void) {
     std::string line;
-    std::cout << "NavMe CLI" << std::endl;
+    std::cout << "NavMe CLI. built at " << __DATE__ <<" " << __TIME__ << std::endl;
     std::cmatch m;
 
     const std::string config_file_name = "navme-cli.ini";
@@ -25,7 +25,7 @@ int main(void) {
         GlobalOptions::get_instance()->save_options_to_file(config_file_name);
     }
     
-    std::string xplane_root;// = "C:\\Users\\norbe\\source\\repos\\NavMe-cli\\Custom Data";
+    std::string xplane_root;
     GlobalOptions::get_instance()->get_option("XPLANE_ROOT", xplane_root);
     std::cout << "Navigation data source: " << xplane_root << "\\Custom Data" << std::endl;
 
@@ -38,7 +38,7 @@ int main(void) {
     std::cout << "Parse earth fix data: ";
     navdata_parser.parse_earth_fix_dat_file();
     std::cout << "DONE" << std::endl;
-
+    
     std::cout << "Nr of navigation point: " << navdata_parser.get_nav_points().size() << std::endl;
 
     CommandParser cmd_parser(navdata_parser);
