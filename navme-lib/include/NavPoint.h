@@ -47,7 +47,7 @@ public:
     void set_radio_type(RadioNavType _type);
     RadioNavType get_radio_type();
     void set_radio_frequency(int _freq);
-    int get_radio_frequency();
+    int get_radio_frequency();    
     int planned_altitude;
     int max_altitude;
     int min_altitude;

@@ -24,11 +24,11 @@ public:
     RNAVProc();
     ~RNAVProc();
     RNAVProc& operator=(const RNAVProc& other);
-    void add_nav_point_id(std::string nav_pnt_id);
-    std::vector<std::string> get_nav_point_ids();
+    void add_nav_point(NavPoint nav_pnt);
+    std::vector<NavPoint> get_nav_points();
     std::string get_name();
     std::string get_region();
-    std::string get_airport_iaco_id();
+    std::string get_airport_icao_id();
     std::string get_runway_name();
     void set_runway_name(std::string _rwy);
     void set_airport_iaco_id(std::string _airport_icao_id);
@@ -39,5 +39,6 @@ private:
     std::string airport_iaco_id;
     std::string rwy;
     RNAVProcType type;
-    std::vector<std::string> nav_point_ids;
+    //std::vector<std::string> nav_point_ids;
+    std::vector<NavPoint> nav_points;
 };

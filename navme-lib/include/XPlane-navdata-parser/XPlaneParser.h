@@ -27,11 +27,11 @@ const std::string RE_TEXT = "(.+)";
 //RWY:RW04R,+0080,      ,00355, ,DCN ,1,   ;N47285299,E021361079,0000;
 //RWY:RW08 ,-0198,      ,01907, ,OEJ ,0,   ;N47153197,E011195411,0197;
 //RWY:RW26, +0198, , 01894, , OEV, 1, ; N47154182, E011212524, 0000;
-const std::string APT_RWY_LINE ="RWY:" +
+const std::string APT_RWY_LINE ="RWY:RW" +
 								RE_ID_S + "," + //[1] RWY name
 								".+" + "," +
 								".+" + "," +
-								"\s*"+RE_INT + "," + //[2] elevation
+								"\\s*"+RE_INT + "," + //[2] elevation
 								".+" + "," +
 								RE_ID_S + "," + //[3] ???
 								".+" + "," +
@@ -61,6 +61,7 @@ private:
 	std::list<Airport> _airports;
 	std::list<RNAVProc> _rnav_procs;
 	std::string xplane_root_folder;
+	std::list<std::string> _airport_files_parsed;
 	std::filesystem::path absolute_path(std::string root_folder, std::string nav_folder, std::string file_name);
 	void trim_line(std::string& line);
 	void parse_rwy_line(std::cmatch& m, Airport* apt_ptr);

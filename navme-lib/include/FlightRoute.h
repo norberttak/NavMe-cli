@@ -18,4 +18,6 @@ public:
     RNAVProc approach;
     Airport destination_airport;
     Airport alternate_airport;
+    std::vector<NavPoint> get_all_navpoints();
+    int get_start_index_of_phase(RNAVProc::RNAVProcType type);
 };

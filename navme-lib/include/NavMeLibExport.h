@@ -1,6 +1,6 @@
 #pragma once
-#ifdef MAKE_DLL
+#ifdef MAKE_DLL_X
 #  define EXPORT __declspec(dllexport)
 #else
-#  define EXPORT 
+#  define EXPORT
 #endif

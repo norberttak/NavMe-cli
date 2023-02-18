@@ -14,15 +14,18 @@
 class EXPORT Runway {
 private:
     const std::string name;
-    const int course;
-    const int ils_freq;
-    const int length;
+    int course;
+    int ils_freq;
+    int length;
 public:
     Runway(std::string _name, int _course, int _ils_freq, int _length);
     std::string get_name();
     int get_course();
     int get_ils_freq();
     int get_length();
+    void set_course(int _course);
+    void set_ils_freq(int _ils_freq);
+    void set_length(int _length);
 };
 
 class EXPORT Airport : public NavPoint {
