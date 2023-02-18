@@ -4,9 +4,177 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #include <regex>
+#include <chrono>
+#include <ctime>
 #include "CommandParser.h"
 
 #define KM_TO_NM 0.5399568
+
+bool CommandParser::handle_export_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
+{
+	std::string format_str = "HTML";
+	get_and_remove_parameter_value("--FORMAT", parameters, format_str);
+	
+	std::string file_name_str = "";
+	get_and_remove_parameter_value("--FILE", parameters, file_name_str);
+
+	if (format_str == "HTML")
+	{
+		return handle_export_flight_plan_html(main_cmd, sub_cmd, parameters);
+	}
+	else
+	{
+		std::cout << "error: unknown export format " << format_str << std::endl;
+		return false;
+	}
+}
+
+bool CommandParser::create_html_based_on_template(std::string template_file_name, std::string html_file_name, HtmlTemplateParameters& template_params)
+{
+	std::ifstream i_template;
+	i_template.open(template_file_name);
+	if (!i_template.is_open())
+	{
+		std::cout << "can't open html template file " << template_file_name << std::endl;
+		return false;
+	}
+
+	std::string html_file_content = "";
+	std::string line;
+	
+	while (std::getline(i_template, line))
+	{
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_TITLE), template_params.title);
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DEPARTURE), template_params.departure);
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DESTINATION), template_params.destination);
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DIRECT_DIST_GREAT), template_params.direct_dist_great);
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DIRECT_DIST_RUMB), template_params.direct_dist_rumb);
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_TOTAL_ROUTE_LENGTH), template_params.total_route_length);
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_TABLE_BODY_NAV_POINTS), template_params.table_body_nav_points);
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_NAV_POINT_COORDS), template_params.table_nav_point_coords);
+
+		std::time_t current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DATE_TIME), "");
+
+		html_file_content += line + "\n";
+	}
+
+	i_template.close();
+
+	std::ofstream o_html_file;
+	o_html_file.open(html_file_name);
+	o_html_file << html_file_content;
+	o_html_file.close();
+
+}
+
+bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
+{
+	HtmlTemplateParameters html_template;
+	
+	html_template.departure = flight_route.departure_airport.get_icao_id();
+
+	html_template.destination = flight_route.destination_airport.get_icao_id();
+	for (auto& rwy : flight_route.destination_airport.get_runways())
+	{
+		html_template.destination += "<br> Runway " + rwy.get_name() + ": ";
+		if (rwy.get_ils_freq() != 0)
+			html_template.destination += " course:" + std::to_string(rwy.get_course()) + ", ILS:" + std::to_string(rwy.get_ils_freq());
+	}
+
+	html_template.title = flight_route.departure_airport.get_icao_id() + "-" + flight_route.destination_airport.get_icao_id();
+
+	if (flight_route.departure_airport.get_icao_id() != "" && flight_route.destination_airport.get_icao_id() != "") {
+		Coordinate dest_coordinate = flight_route.destination_airport.get_coordinate();
+		RelativePos rel_pos;
+		flight_route.departure_airport.get_coordinate().get_relative_pos_to(dest_coordinate, rel_pos);
+		html_template.direct_dist_great = std::to_string((int)(KM_TO_NM*rel_pos.dist_ortho)) + "nm " + std::to_string((int)rel_pos.dist_ortho) + "km";
+		html_template.direct_dist_rumb =  std::to_string((int)(KM_TO_NM * rel_pos.dist_loxo)) + "nm " + std::to_string((int)rel_pos.dist_loxo) + "km";
+	}
+
+	std::vector<NavPoint> all_nav_points = flight_route.get_all_navpoints();
+	
+	int index_sid = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_SID);
+	int index_enroute = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_OTHER);
+	int index_star = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_STAR);
+	int index_approach = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_APPROACH);
+
+	double total_route_length = 0;
+	int nav_point_index = 0;
+	std::string proc_td_class_str = "";
+
+	for (auto& np : all_nav_points)
+	{
+		std::string coordinate_str = np.get_coordinate().to_string();
+		std::replace(coordinate_str.begin(), coordinate_str.end(), char(248), char(186));
+
+		RelativePos rel_pos;
+		if (nav_point_index < all_nav_points.size()-1)
+		{
+			Coordinate next_coord = all_nav_points[nav_point_index + 1].get_coordinate();
+			np.get_coordinate().get_relative_pos_to(next_coord,rel_pos);
+			if (rel_pos.heading_loxo.convert_to_double() < 0)
+			{
+				Angle offset(360);
+				rel_pos.heading_loxo = rel_pos.heading_loxo + offset;
+			}
+		}
+
+		total_route_length += rel_pos.dist_loxo;
+
+		std::string hdg_loxo_str = rel_pos.heading_loxo.to_string(false);
+		std::string dist_loxo = std::to_string((int)(KM_TO_NM * rel_pos.dist_loxo)) + "nm " + std::to_string((int)rel_pos.dist_loxo) + "km";
+		std::string flight_phase_str = "";
+
+		if (index_sid >= 0 && nav_point_index == index_sid)
+		{
+			proc_td_class_str = "sid";
+			flight_phase_str = "<td class=\""+ proc_td_class_str +"\">SID</td>\n";
+		}
+		else if (index_enroute >= 0 && nav_point_index == index_enroute)
+		{
+			proc_td_class_str = "enroute";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Enroute</td>\n";
+		}
+		else if (index_star >= 0 && nav_point_index == index_star)
+		{
+			proc_td_class_str = "star";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Star</td>\n";
+		}
+		else if (index_approach >= 0 && nav_point_index == index_approach)
+		{
+			proc_td_class_str = "app";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Approach</td>\n";
+		}
+		else
+		{
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\"></td>\n";
+		}
+
+		html_template.table_body_nav_points = html_template.table_body_nav_points +
+			"<tr>\n" +
+			flight_phase_str +
+			"<td>" + np.get_icao_id() + "</td>\n" +
+			"<td>" + coordinate_str + "</td>\n" +
+			"<td>" + np.get_name() +
+			(np.get_radio_frequency() != 0 ? ("<br>" + std::to_string(np.get_radio_frequency()) + "</td>\n") : "</td>\n") +
+			(nav_point_index < all_nav_points.size()-1 ? "<td>" + hdg_loxo_str + "</td>\n" : "<td></td>\n") +
+			(nav_point_index < all_nav_points.size()-1 ? "<td>" + dist_loxo + "</td>\n" : "<td></td>\n") +
+			"</tr>\n";
+
+		html_template.table_nav_point_coords += "[" +
+			std::to_string(np.get_coordinate().lat.convert_to_double()) +
+			"," +
+			std::to_string(np.get_coordinate().lng.convert_to_double()) +
+			"],\n";
+
+		nav_point_index++;
+	}
+
+	html_template.total_route_length = std::to_string((int)(KM_TO_NM * total_route_length)) + "nm " + std::to_string((int)total_route_length) + "km";
+
+	return create_html_based_on_template("html-report-template/flight_plan_template.html", "export/"+html_template.title + ".html", html_template);
+}
 
 bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
@@ -27,82 +195,34 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 	}
 	std::cout << "#########################################" << std::endl;
 
-	std::cout << "sid: " << flight_route.sid.get_name() << " " << flight_route.sid.get_runway_name() << std::endl;
-	for (auto& np : flight_route.sid.get_nav_point_ids())
+	std::vector<NavPoint> all_nav_points = flight_route.get_all_navpoints();
+	
+	int index_sid = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_SID);
+	int index_enroute = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_OTHER);
+	int index_star = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_STAR);
+	int index_approach = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_APPROACH);
+
+	double total_route_length = 0;
+	int nav_point_index = 0;
+	for (auto& np : all_nav_points)
 	{
-		std::list<NavPoint> nav_points = navdata_parser.get_nav_points_by_icao_id(flight_route.sid.get_region(), np);
-		if (nav_points.size() == 0)
-			continue;
-		
-		//calculate relative position compared to previous nav point
-		nav_points.front().get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
-		last_point_coordinate = nav_points.front().get_coordinate();
+		if (index_sid >= 0 && nav_point_index == index_sid)
+			std::cout << "sid: " << flight_route.sid.get_name() << " " << flight_route.sid.get_runway_name() << std::endl;
+		if (index_enroute >= 0 && nav_point_index == index_enroute)
+			std::cout << "enroute: " << std::endl;
+		if (index_star >= 0 && nav_point_index == index_star)
+			std::cout << "star: " << flight_route.star.get_name() << " " << flight_route.star.get_runway_name() << std::endl;
+		if (index_approach >= 0 && nav_point_index == index_approach)
+			std::cout << "approach: " << flight_route.approach.get_name() << " " << flight_route.approach.get_runway_name() << std::endl;
 
-		std::cout << "  " 
-			<< std::setw(5) << std::setfill(' ') << nav_points.front().get_icao_id()
-			<< " " 
-			<< nav_points.front().get_coordinate().to_string() 
-			<< " " << (int)(rel_pos.dist_ortho* KM_TO_NM) << " nm"
-			<< std::endl;
-	}
-
-	int navpoint_index = 0;
-	std::cout << "enroute: " << std::endl;
-	for (auto& np : flight_route.enroute_points)
-	{
-		//calculate relative position compared to previous nav point
-		np.get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
-		last_point_coordinate = np.get_coordinate();
-
-		std::cout << "  " << navpoint_index << ": " 
-			<< std::setw(5) << std::setfill(' ') << np.get_icao_id() << " "
-			<< np.get_coordinate().to_string() << " "			
-			<< " " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm"
+		std::cout << "  "
+			<< std::setw(5) << std::setfill(' ') << np.get_icao_id()
+			<< " "
+			<< np.get_coordinate().to_string()
 			<< std::endl;
 
-		if (np.get_radio_frequency() != 0)
-			std::cout << "    " << np.get_name() << " " << std::to_string(np.get_radio_frequency()) << std::endl;
-
-		navpoint_index++;
+		nav_point_index++;
 	}
-
-	std::cout << "star: " << flight_route.star.get_name() << " " << flight_route.star.get_runway_name() << std::endl;
-	for (auto& np : flight_route.star.get_nav_point_ids())
-	{
-		std::list<NavPoint> nav_points = navdata_parser.get_nav_points_by_icao_id(flight_route.star.get_region(), np);
-		if (nav_points.size() == 0)
-			continue;
-
-		//calculate relative position compared to previous nav point
-		nav_points.front().get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
-		last_point_coordinate = nav_points.front().get_coordinate();
-
-		std::cout << "  " 
-			<< std::setw(5) << std::setfill(' ') << nav_points.front().get_icao_id()
-			<< " " 
-			<< nav_points.front().get_coordinate().to_string() 
-			<< " " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm"
-			<< std::endl;
-	}
-
-	std::cout << "approach: " << flight_route.approach.get_name() << " " << flight_route.approach.get_runway_name() << std::endl;
-	for (auto& np : flight_route.approach.get_nav_point_ids())
-	{
-		std::list<NavPoint> nav_points = navdata_parser.get_nav_points_by_icao_id(flight_route.approach.get_region(), np);
-		if (nav_points.size() == 0)
-			continue;
-
-		//calculate relative position compared to previous nav point
-		nav_points.front().get_coordinate().get_relative_pos_to(last_point_coordinate, rel_pos);
-		last_point_coordinate = nav_points.front().get_coordinate();
-
-		std::cout << "  " 
-			<< nav_points.front().get_icao_id() 
-			<< " " << nav_points.front().get_coordinate().to_string() 
-			<< " " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm"
-			<< std::endl;
-	}
-
 	return true;
 }
 
@@ -336,13 +456,11 @@ bool CommandParser::handle_set_sid(std::string main_cmd, std::string sub_cmd, st
 		}
 		flight_route.sid = sid;
 
-		std::vector<std::string> nav_points = flight_route.sid.get_nav_point_ids();
+		std::vector<NavPoint> nav_points = flight_route.sid.get_nav_points();
 		for (auto& navp : nav_points)
 		{
-			std::cout << "  " << navp << ":";
-			std::list<NavPoint> sid_points = navdata_parser.get_nav_points_by_icao_id(navp);
-			if (sid_points.size() > 0)
-				std::cout << sid_points.front().get_coordinate().to_string();
+			std::cout << "  " << navp.get_icao_id() << ":";
+			std::cout << navp.get_coordinate().to_string();
 			std::cout << std::endl;
 		}
 		return true;
@@ -378,13 +496,11 @@ bool CommandParser::handle_set_star(std::string main_cmd, std::string sub_cmd, s
 		}
 		flight_route.star = star;
 
-		std::vector<std::string> nav_points = flight_route.star.get_nav_point_ids();
+		std::vector<NavPoint> nav_points = flight_route.star.get_nav_points();
 		for (auto& navp : nav_points)
 		{
-			std::cout << "  " << navp << ":";
-			std::list<NavPoint> star_points = navdata_parser.get_nav_points_by_icao_id(navp);
-			if (star_points.size() > 0)
-				std::cout << star_points.front().get_coordinate().to_string();
+			std::cout << "  " << navp.get_icao_id() << ":";
+			std::cout << navp.get_coordinate().to_string();
 			std::cout << std::endl;
 		}
 		return true;
@@ -420,13 +536,11 @@ bool CommandParser::handle_set_app(std::string main_cmd, std::string sub_cmd, st
 		}
 		flight_route.approach = app;
 
-		std::vector<std::string> nav_points = flight_route.approach.get_nav_point_ids();
+		std::vector<NavPoint> nav_points = flight_route.approach.get_nav_points();
 		for (auto& navp : nav_points)
 		{
-			std::cout << "  " << navp << ":";
-			std::list<NavPoint> app_points = navdata_parser.get_nav_points_by_icao_id(navp);
-			if (app_points.size() > 0)
-				std::cout << app_points.front().get_coordinate().to_string();
+			std::cout << "  " << navp.get_icao_id() << ":";
+			std::cout << navp.get_coordinate().to_string();
 			std::cout << std::endl;
 		}
 		return true;
@@ -640,6 +754,8 @@ CommandParser::CommandParser(XPlaneParser& _navdata_parser) :
 	command_handlers["SHOW__DIRECT"] = &CommandParser::handle_show_direct;
 	command_handlers["SHOW__INFO"] = &CommandParser::handle_show_info;
 	command_handlers["SHOW__OPTION"] = &CommandParser::handle_show_option;
+
+	command_handlers["EXPORT__FLIGHT_PLAN"] = &CommandParser::handle_export_flight_plan;
 
 	command_handlers["SET__OPTION"] = &CommandParser::handle_set_option;
 	command_handlers["SET__DEP"] = &CommandParser::handle_set_departure;
