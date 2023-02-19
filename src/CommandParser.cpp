@@ -61,7 +61,10 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 
 		const auto now = std::chrono::system_clock::now();
 		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DATE_TIME), std::format("{:%d-%m-%Y %H:%M:%OS}", now));
-
+		
+		line = std::regex_replace(line, std::regex("[º]+"), "&deg;");
+		line = std::regex_replace(line, std::regex("[ø]+"), "&deg;");
+		
 		html_file_content += line + "\n";
 	}
 
@@ -137,7 +140,7 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 		if (index_sid >= 0 && nav_point_index == index_sid)
 		{
 			proc_td_class_str = "sid";
-			flight_phase_str = "<td class=\""+ proc_td_class_str +"\">SID</td>\n";
+			flight_phase_str = "<td class=\""+ proc_td_class_str +"\">SID<br>" + flight_route.sid.get_name() + "</td>\n";
 		}
 		else if (index_enroute >= 0 && nav_point_index == index_enroute)
 		{
@@ -147,12 +150,12 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 		else if (index_star >= 0 && nav_point_index == index_star)
 		{
 			proc_td_class_str = "star";
-			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Star</td>\n";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">STAR<br>"+ flight_route.star.get_name() +"</td>\n";
 		}
 		else if (index_approach >= 0 && nav_point_index == index_approach)
 		{
 			proc_td_class_str = "app";
-			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Approach</td>\n";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Approach<br>"+ flight_route.approach.get_name() +"</td>\n";
 		}
 		else
 		{
