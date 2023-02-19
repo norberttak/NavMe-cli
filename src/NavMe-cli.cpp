@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <regex>
+#include "Logger.h"
 #include "NavMeLib.h"
 #include "CommandParser.h"
 
@@ -21,6 +22,7 @@ int main(void) {
     {
         GlobalOptions::get_instance()->set_option("ANGLE_FORMAT", "ANGLE_DEG_DECMIN");
         GlobalOptions::get_instance()->set_option("XPLANE_ROOT", "C:\\XPlane 12");
+        GlobalOptions::get_instance()->set_option("LOG_LEVEL", "INFO");
         std::cout << config_file_name << " config file doesn't exist. creating one." << std::endl;
         GlobalOptions::get_instance()->save_options_to_file(config_file_name);
     }
@@ -28,6 +30,23 @@ int main(void) {
     std::string xplane_root;
     GlobalOptions::get_instance()->get_option("XPLANE_ROOT", xplane_root);
     std::cout << "Navigation data source: " << xplane_root << "\\Custom Data" << std::endl;
+    Logger(logINFO) << "CLI: Navigation data source: " << xplane_root << "\\Custom Data" << std::endl;
+
+    std::string log_level_str;
+    GlobalOptions::get_instance()->get_option("LOG_LEVEL", log_level_str);
+    if (log_level_str == "ERROR")
+        Logger(logINFO).set_log_level(logERROR);
+    else if (log_level_str == "WARNING")
+        Logger(logINFO).set_log_level(logWARNING);
+    else if (log_level_str == "INFO")
+        Logger(logINFO).set_log_level(logINFO);
+    else if (log_level_str == "DEBUG")
+        Logger(logINFO).set_log_level(logDEBUG);
+    else if (log_level_str == "TRACE")
+            Logger(logINFO).set_log_level(logTRACE);
+    else
+        Logger(logINFO).set_log_level(logINFO);
+
 
     XPlaneParser navdata_parser(xplane_root);
 
@@ -40,6 +59,7 @@ int main(void) {
     std::cout << "DONE" << std::endl;
     
     std::cout << "Nr of navigation point: " << navdata_parser.get_nav_points().size() << std::endl;
+    Logger(logINFO) << "CLI: Nr of navigation point: " << navdata_parser.get_nav_points().size() << std::endl;
 
     CommandParser cmd_parser(navdata_parser);
 
@@ -57,13 +77,15 @@ int main(void) {
         }
 
         try {
+            Logger(logINFO) << "CLI: command: " << line << std::endl;
             cmd_parser.parse_and_dispatch_command(line);
         }
         catch (...) {
             std::cout << "error occurred while parsing command: " << line << std::endl;
+            Logger(logINFO) << "CLI:error occurred while parsing command: " << line << std::endl;
         }
 
-        std::cout << "# ";        
+        std::cout << "# ";
     }
     return EXIT_SUCCESS;
 }

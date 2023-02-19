@@ -6,6 +6,11 @@
 #include <regex>
 #include <chrono>
 #include <ctime>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
+#include "Logger.h"
 #include "CommandParser.h"
 
 #define KM_TO_NM 0.5399568
@@ -36,6 +41,7 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 	if (!i_template.is_open())
 	{
 		std::cout << "can't open html template file " << template_file_name << std::endl;
+		Logger(TLogLevel::logERROR) << "CLI: can't open html template file " << template_file_name << std::endl;
 		return false;
 	}
 
@@ -53,8 +59,8 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_TABLE_BODY_NAV_POINTS), template_params.table_body_nav_points);
 		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_NAV_POINT_COORDS), template_params.table_nav_point_coords);
 
-		std::time_t current_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DATE_TIME), "");
+		const auto now = std::chrono::system_clock::now();
+		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DATE_TIME), std::format("{:%d-%m-%Y %H:%M:%OS}", now));
 
 		html_file_content += line + "\n";
 	}
@@ -66,6 +72,8 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 	o_html_file << html_file_content;
 	o_html_file.close();
 
+	std::cout << "flight plan exported: " << html_file_name << std::endl;
+	return true;
 }
 
 bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
