@@ -23,7 +23,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TAG: v${{ inputs.release-version }}
-      WINDOWS_RELEASE_PLUGIN_ZIP: navme-cli_windows_v${{ inputs.release-version }}.zip
+      WINDOWS_RELEASE_APPLICATION_ZIP: navme-cli_windows_v${{ inputs.release-version }}.zip
 
     steps:
       - uses: actions/checkout@v3
@@ -32,7 +32,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: built-application-windows 
-          path: built-application-windows/x64/Release/
+          path: built-application-windows
 
       - name: Copy config file
         run: |
@@ -50,7 +50,7 @@ jobs:
       - name: Create release plugin zip (Windows)
         run: |
           cd built-application-windows
-          zip -r ../${WINDOWS_RELEASE_PLUGIN_ZIP} .
+          zip -r ../${WINDOWS_RELEASE_APPLICATION_ZIP} .
 
       - name: Create draft release
         run: |
@@ -59,4 +59,4 @@ jobs:
             --title "v${{ inputs.release-version }} release" \
             --generate-notes \
             ${TAG} \
-            ${WINDOWS_RELEASE_PLUGIN_ZIP}
+            ${WINDOWS_RELEASE_APPLICATION_ZIP}
