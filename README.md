@@ -191,8 +191,8 @@ Export the flight plan in html format.
 flight plan exported: export/LSGG-LDSP.html
 ```
 
-The html file will be created in the export folder. The name of the file is 
-departure_icao-destination_icao.html.
+The html file will be created in the export folder. The default name of the file is 
+departure_icao-destination_icao.html. If you want to set other file name use the ```--file <file_name>``` option.
 
 ![html_flightplan](doc/fp-lsgg-ldsp.png)
 

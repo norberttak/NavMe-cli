@@ -20,9 +20,6 @@ bool CommandParser::handle_export_flight_plan(std::string main_cmd, std::string 
 	std::string format_str = "HTML";
 	get_and_remove_parameter_value("--FORMAT", parameters, format_str);
 	
-	std::string file_name_str = "";
-	get_and_remove_parameter_value("--FILE", parameters, file_name_str);
-
 	if (format_str == "HTML")
 	{
 		return handle_export_flight_plan_html(main_cmd, sub_cmd, parameters);
@@ -69,6 +66,17 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 	}
 
 	i_template.close();
+
+	if (std::filesystem::exists(std::filesystem::path(html_file_name)))
+	{
+		std::cout << html_file_name + " already exists. overwrite it? y/n" << std::endl;
+		std::string overwrite;
+		std::cout << "? ";
+		std::getline(std::cin, overwrite);
+		std::transform(overwrite.begin(), overwrite.end(), overwrite.begin(), ::toupper);
+		if (overwrite != "Y")
+			return false;
+	}
 
 	std::ofstream o_html_file;
 	o_html_file.open(html_file_name);
@@ -184,7 +192,13 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 
 	html_template.total_route_length = std::to_string((int)(KM_TO_NM * total_route_length)) + "nm " + std::to_string((int)total_route_length) + "km";
 
-	return create_html_based_on_template("html-report-template/flight_plan_template.html", "export/"+html_template.title + ".html", html_template);
+	std::string file_name_str = "";
+	if (get_and_remove_parameter_value("--FILE", parameters, file_name_str))
+		file_name_str = "export/" + file_name_str;
+	else
+		file_name_str = "export/" + html_template.title + ".html";
+
+	return create_html_based_on_template("html-report-template/flight_plan_template.html", file_name_str, html_template);
 }
 
 bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
