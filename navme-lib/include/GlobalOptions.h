@@ -8,11 +8,10 @@
 #include <map>
 #include <list>
 #include <filesystem>
-#include "NavMeLibExport.h"
 
 #define OPTION_KEY_ANGLE_FORMAT "angle_format"
 
-struct EXPORT GlobalOptions {
+struct GlobalOptions {
 public:
     static GlobalOptions* get_instance();
     bool set_option(std::string option_name, std::string option_value);

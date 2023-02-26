@@ -1,12 +1,10 @@
 #pragma once
-#include "NavMeLibExport.h"
-
 #include "GlobalOptions.h"
 #include "Airport.h"
 #include "RNAVProc.h"
 #include "NavPoint.h"
 
-class EXPORT FlightRoute {
+class FlightRoute {
 private:
     std::string name;
 public:

@@ -1,10 +1,8 @@
 #pragma once
-#include "NavMeLibExport.h"
-
 #include "GlobalOptions.h"
 #include <string>
 
-class EXPORT Angle {
+class Angle {
 private:
     void convert_from_double(double angle);
     bool sign_negative = false;

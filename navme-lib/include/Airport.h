@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #pragma once
-#include "NavMeLibExport.h"
 #include "GlobalOptions.h"
 #include "NavPoint.h"
 #include <list>
 #include <string>
 #include <list>
 
-class EXPORT Runway {
+class Runway {
 private:
     const std::string name;
     int course;
@@ -28,7 +27,7 @@ public:
     void set_length(int _length);
 };
 
-class EXPORT Airport : public NavPoint {
+class Airport : public NavPoint {
 private:
     std::list<Runway> runways;
 public:

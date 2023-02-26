@@ -4,13 +4,11 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #pragma once
-#include "NavMeLibExport.h"
-
 #include <string>
 #include "GlobalOptions.h"
 #include "Coordinate.h"
 
-class EXPORT NavPoint {
+class NavPoint {
 public:
     typedef enum {
         NONE,

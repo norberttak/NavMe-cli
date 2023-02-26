@@ -4,14 +4,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #pragma once
-#include "NavMeLibExport.h"
-
 #include <vector>
 #include <string>
 #include "GlobalOptions.h"
 #include "NavPoint.h"
 
-class EXPORT RNAVProc {
+class RNAVProc {
 public:
     typedef enum {
         RNAV_SID,

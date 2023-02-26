@@ -4,13 +4,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #pragma once
-#include "NavMeLibExport.h"
-
 #include <string>
 #include <vector>
 #include <list>
 
-#include "NavMeLibExport.h"
 #include "GlobalOptions.h"
 #include "Angle.h"
 #include "Coordinate.h"
