@@ -132,17 +132,16 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 		{
 			Coordinate next_coord = all_nav_points[nav_point_index + 1].get_coordinate();
 			np.get_coordinate().get_relative_pos_to(next_coord,rel_pos);
-			if (rel_pos.heading_loxo.convert_to_double() < 0)
-			{
-				Angle offset(360);
-				rel_pos.heading_loxo = rel_pos.heading_loxo + offset;
-			}
 		}
 
 		total_route_length += rel_pos.dist_loxo;
 
 		std::string hdg_loxo_str = rel_pos.heading_loxo.to_string(false);
+		std::string hdg_ortho_str = rel_pos.heading_ortho_departure.to_string(false);
+
 		std::string dist_loxo = std::to_string((int)(KM_TO_NM * rel_pos.dist_loxo)) + "nm " + std::to_string((int)rel_pos.dist_loxo) + "km";
+		std::string dist_ortho = std::to_string((int)(KM_TO_NM * rel_pos.dist_ortho)) + "nm " + std::to_string((int)rel_pos.dist_ortho) + "km";
+
 		std::string flight_phase_str = "";
 
 		if (index_sid >= 0 && nav_point_index == index_sid)
@@ -177,8 +176,8 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 			"<td>" + coordinate_str + "</td>\n" +
 			"<td>" + np.get_name() +
 			(np.get_radio_frequency() != 0 ? ("<br>" + std::to_string(np.get_radio_frequency()) + "</td>\n") : "</td>\n") +
-			(nav_point_index < all_nav_points.size()-1 ? "<td>" + hdg_loxo_str + "</td>\n" : "<td></td>\n") +
-			(nav_point_index < all_nav_points.size()-1 ? "<td>" + dist_loxo + "</td>\n" : "<td></td>\n") +
+			(nav_point_index < all_nav_points.size()-1 ? "<td>" + hdg_ortho_str + "</td>\n" : "<td></td>\n") +
+			(nav_point_index < all_nav_points.size()-1 ? "<td>" + dist_ortho + "</td>\n" : "<td></td>\n") +
 			"</tr>\n";
 
 		html_template.table_nav_point_coords += "[" +
@@ -215,6 +214,7 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 
 		Coordinate dest_coordinate = flight_route.destination_airport.get_coordinate();
 		flight_route.departure_airport.get_coordinate().get_relative_pos_to(dest_coordinate, rel_pos);
+
 		std::cout << "direct distance orthodrom: " << (int)rel_pos.dist_ortho << " km, " << (int)(rel_pos.dist_ortho * KM_TO_NM) << " nm" << std::endl;
 		std::cout << "direct distance loxodrom: " << (int)rel_pos.dist_loxo << " km, " << (int)(rel_pos.dist_loxo * KM_TO_NM) << " nm" << std::endl;
 	}
@@ -231,6 +231,21 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 	int nav_point_index = 0;
 	for (auto& np : all_nav_points)
 	{
+		RelativePos rel_pos;
+		if (nav_point_index < all_nav_points.size() - 1)
+		{
+			Coordinate next_coord = all_nav_points[nav_point_index + 1].get_coordinate();
+			np.get_coordinate().get_relative_pos_to(next_coord, rel_pos);
+		}
+
+		total_route_length += rel_pos.dist_loxo;
+
+		std::string hdg_loxo_str = rel_pos.heading_loxo.to_string(false);
+		std::string hdg_ortho_str = rel_pos.heading_ortho_departure.to_string(false);
+
+		std::string dist_loxo = std::to_string((int)(KM_TO_NM * rel_pos.dist_loxo)) + "nm " + std::to_string((int)rel_pos.dist_loxo) + "km";
+		std::string dist_ortho = std::to_string((int)(KM_TO_NM * rel_pos.dist_ortho)) + "nm " + std::to_string((int)rel_pos.dist_ortho) + "km";
+
 		if (index_sid >= 0 && nav_point_index == index_sid)
 			std::cout << "sid: " << flight_route.sid.get_name() << " " << flight_route.sid.get_runway_name() << std::endl;
 		if (index_enroute >= 0 && nav_point_index == index_enroute)
@@ -242,9 +257,13 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 
 		std::cout << "  "
 			<< std::setw(5) << std::setfill(' ') << np.get_icao_id()
-			<< " "
-			<< np.get_coordinate().to_string()
+			<< " "			
+			<< np.get_coordinate().to_string() << " "
+			<< (nav_point_index < all_nav_points.size() - 1 ? " " + hdg_ortho_str : "")
+			<< (nav_point_index < all_nav_points.size() - 1 ? " " + dist_ortho : "")
 			<< std::endl;
+
+		std::cout << (np.get_radio_frequency() != 0 ? ("      " + np.get_name()+ ": " + std::to_string(np.get_radio_frequency()) + "\n") : "");
 
 		nav_point_index++;
 	}
@@ -294,12 +313,13 @@ bool CommandParser::handle_show_direct(std::string main_cmd, std::string sub_cmd
 
 	RelativePos realative_pos;
 	coord1.get_relative_pos_to(coord2, realative_pos);
+
 	std::cout << "loxodrom (rhumb line) route:" << std::endl;
 	std::cout << "  heading " << realative_pos.heading_loxo.to_string(false) << std::endl;
-	std::cout << "  distance " << realative_pos.dist_loxo << " km   " << (int)(KM_TO_NM * realative_pos.dist_loxo) << " nm" << std::endl;
+	std::cout << "  distance " << (int)realative_pos.dist_loxo << " km   " << (int)(KM_TO_NM * realative_pos.dist_loxo) << " nm" << std::endl;
 	std::cout << "orthodrom (great circle) route:" << std::endl;
 	std::cout << "  departure heading " << realative_pos.heading_ortho_departure.to_string(false) << "  arrival heading " << realative_pos.heading_ortho_arrival.to_string(false) << std::endl;
-	std::cout << "  distance " << realative_pos.dist_ortho << " km   " << (int)(KM_TO_NM * realative_pos.dist_ortho) << " nm" << std::endl;
+	std::cout << "  distance " << (int)realative_pos.dist_ortho << " km   " << (int)(KM_TO_NM * realative_pos.dist_ortho) << " nm" << std::endl;
 	return true;
 }
 
