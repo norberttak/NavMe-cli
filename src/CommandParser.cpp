@@ -9,9 +9,12 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <regex>
 
 #include "Logger.h"
 #include "CommandParser.h"
+//#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "httplib.h"
 
 #define KM_TO_NM 0.5399568
 
@@ -415,6 +418,49 @@ bool CommandParser::handle_show_info(std::string main_cmd, std::string sub_cmd, 
 	return true;
 }
 
+/*This function queries the actual metar or taf for a given airport. The data is fetched from http://avwx.rest service.
+  As the metar and taf query almost the same we use a common function for them. The sub_cmd parameter determines what 
+  do we want to query (mtera or taf) */
+bool CommandParser::handle_show_metar_taf(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
+{
+	if (parameters.size() < 1)
+	{
+		std::cout << "error: not enough parameter" << std::endl;
+		return false;
+	}
+
+	std::string avwx_api_token = "";
+	if (!GlobalOptions::get_instance()->get_option("AVWX_API_TOKEN", avwx_api_token))
+	{
+		std::cout << "error: can't read API token from config file" << std::endl;
+	}	
+	
+	std::transform(sub_cmd.begin(), sub_cmd.end(), sub_cmd.begin(), ::tolower);
+
+	httplib::Client cli("http://avwx.rest");
+	std::string avwx_query_url = "/api/" + sub_cmd + "/" + parameters[0] + "?filter=sanitized&token=" + avwx_api_token;
+	auto res = cli.Get(avwx_query_url);
+	if (res->status != 200)
+	{
+		std::cout << "error: webserver return status: " << httplib::detail::status_message(res->status) << std::endl;
+		return false;
+	}
+
+	const std::string RE_METAR_STR = ".+\"sanitized\":\"(.+)\"\\}";
+	auto re_metar = std::regex(RE_METAR_STR);
+	std::cmatch m;
+	if (std::regex_match(res->body.c_str(), m, re_metar))
+	{
+		std::cout << m[1] << std::endl;
+		return true;
+	}
+	else
+	{
+		std::cout << "error: unable to query metar" << std::endl;
+		return false;
+	}	
+}
+
 bool CommandParser::handle_set_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
 	if (parameters.size() < 2)
@@ -799,6 +845,8 @@ CommandParser::CommandParser(XPlaneParser& _navdata_parser) :
 	command_handlers["SHOW__DIRECT"] = &CommandParser::handle_show_direct;
 	command_handlers["SHOW__INFO"] = &CommandParser::handle_show_info;
 	command_handlers["SHOW__OPTION"] = &CommandParser::handle_show_option;
+	command_handlers["SHOW__METAR"] = &CommandParser::handle_show_metar_taf;
+	command_handlers["SHOW__TAF"] = &CommandParser::handle_show_metar_taf;
 
 	command_handlers["EXPORT__FLIGHT_PLAN"] = &CommandParser::handle_export_flight_plan;
 
