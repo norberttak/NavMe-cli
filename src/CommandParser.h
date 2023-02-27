@@ -52,6 +52,7 @@ private:
 	bool handle_show_direct(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 	bool handle_show_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 	bool handle_show_info(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
+	bool handle_show_metar_taf(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 
 	bool handle_export_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 
