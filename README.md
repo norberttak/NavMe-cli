@@ -183,8 +183,26 @@ approach: I31R-NICRA
   BP865 N47°17.6' E19°29.9'
 ```
 
+#### show metar
+This command fetches the actual METAR from AVWX services. Use the icao 
+id of airport as a parameter:
+```
+# show metar lhbp
+LHBP 271800Z 08006G16KT 050V120 CAVOK M00/M06 Q1024 NOSIG
+```
+This command requires an API token from the AVWX web site. See the details in [token registration](doc/api-token-registration.md).
+
+[Api Token Registration](doc/api-token-registration.md)#### show taf
+This command fetches the actual TAF from AVWX services. Use the icao 
+id of airport as a parameter:
+```
+# show taf egll
+EGLL 271654Z 2718/2824 02009KT 9999 SCT035 TEMPO 2721/2811 BKN012 PROB30 TEMPO 2800/2807 BKN005 PROB30 TEMPO 2813/2821 8000 SHRA BKN014
+```
+This command requires an API token from the AVWX web site. See the details in [token registration](doc/api-token-registration.md).
+
 ### export command
-### export flight_plan{#export_flightplan}
+#### export flight_plan{#export_flightplan}
 Export the flight plan in html format.
 ```
 # export flight_plan
