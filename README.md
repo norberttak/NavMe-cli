@@ -21,8 +21,8 @@ The ANGLE_FORMAT is to control the string representation of the angles. The poss
 
 |ANGLE_FORMAT|Description|Example|
 |----------------|--------|----------------|
-|ANGLE_DEG_DECMIN|use degree and minutes in decimal format. The decimal part is always 1 digit long|47°25.2'|
-|ANGLE_DEG_MIN_SEC|use degree, minutes and seconds|47°25'14"|
+|ANGLE_DEG_DECMIN|use degree and minutes in decimal format. The decimal part is always 1 digit long|47Â°25.2'|
+|ANGLE_DEG_MIN_SEC|use degree, minutes and seconds|47Â°25'14"|
 |ANGLE_DOUBLE|angle value is display as a double|47.42|
 
 The LOG_LEVEL is to control the details of log messages recorded in the nav-me-lib-log.txt file.
@@ -58,8 +58,8 @@ Set departure airport. Use the ICAO id of the airport.
 # set dep lhbp
 departure airport: LHBP
   name: , region: LH
-  magnetic variation: 5°00.0'
-  N47°25.2' E19°17.8'
+  magnetic variation: 5Â°00.0'
+  N47Â°25.2' E19Â°17.8'
   ```
 #### set dest
 Set destination airport. Use the ICAO id of the airport.
@@ -68,8 +68,8 @@ Set destination airport. Use the ICAO id of the airport.
 # set dest epwa
 destination airport: EPWA
   name: , region: EP
-  magnetic variation: 6°00.0'
-  N52°05.6' E20°35.0'
+  magnetic variation: 6Â°00.0'
+  N52Â°05.6' E20Â°35.0'
   ```
 #### set sid
 Set SID (Standard Instrumental Departure) to your flight plan.
@@ -77,12 +77,12 @@ Set SID (Standard Instrumental Departure) to your flight plan.
 ```
 # set sid litk2b
 SID: LITK2B
-  DE13L:N47°25.3' E19°17.6'
-  BP701:N47°23.2' E19°23.0'
-  BP702:N47°35.2' E19°43.1'
-  BP703:N47°47.3' E19°23.7'
-  BP705:N47°56.2' E19°36.0'
-  LITKU:N48°13.8' E19°35.9'
+  DE13L:N47Â°25.3' E19Â°17.6'
+  BP701:N47Â°23.2' E19Â°23.0'
+  BP702:N47Â°35.2' E19Â°43.1'
+  BP703:N47Â°47.3' E19Â°23.7'
+  BP705:N47Â°56.2' E19Â°36.0'
+  LITKU:N48Â°13.8' E19Â°35.9'
 ```
 The command finds all the navigation points of the SID and add it to your flight plan.
 
@@ -91,18 +91,18 @@ Set STAR (STandard Arrival Route) to your flight plan.
 ```
 # set star LOGD5N
 STAR: LOGD5N
-  LOGDA:N51°17.0' E20°41.6'
-  WA821:N51°28.9' E20°47.9'
-  EMCEL:N51°41.1' E20°54.5'
-  FOLFA:N51°46.6' E20°57.4'
-  SERFU:N51°56.2' E20°58.1'
-  FILOZ:N52°04.2' E20°58.7'
-  SOSIN:N52°07.3' E20°47.5'
-  BASEK:N52°10.7' E20°35.3'
-  LUGEL:N52°12.4' E20°29.4'
-  PIBAR:N52°14.0' E20°23.5'
-  WA413:N52°18.5' E20°26.8'
-  WA412:N52°16.9' E20°32.7'
+  LOGDA:N51Â°17.0' E20Â°41.6'
+  WA821:N51Â°28.9' E20Â°47.9'
+  EMCEL:N51Â°41.1' E20Â°54.5'
+  FOLFA:N51Â°46.6' E20Â°57.4'
+  SERFU:N51Â°56.2' E20Â°58.1'
+  FILOZ:N52Â°04.2' E20Â°58.7'
+  SOSIN:N52Â°07.3' E20Â°47.5'
+  BASEK:N52Â°10.7' E20Â°35.3'
+  LUGEL:N52Â°12.4' E20Â°29.4'
+  PIBAR:N52Â°14.0' E20Â°23.5'
+  WA413:N52Â°18.5' E20Â°26.8'
+  WA412:N52Â°16.9' E20Â°32.7'
   ```
 
 The command finds all the navigation points of the STAR and add it to your flight plan.
@@ -112,8 +112,8 @@ shall contain the transition point name with "-". See the [list app](#list_app) 
 ```
 # set app I31R-NICRA
 APP: I31R-NICRA
-  NICRA:N47°21.3' E19°34.9'
-  BP865:N47°17.6' E19°29.9'
+  NICRA:N47Â°21.3' E19Â°34.9'
+  BP865:N47Â°17.6' E19Â°29.9'
   ```
 #### set option {#set_option}
 set option key-value pair to a new value. Please note: this change won't be saved to
@@ -131,10 +131,10 @@ It calculate the distance and bearings in both great circle (orthodrom) and rhum
 ```
 # show direct lhbp kjfk
 loxodrom (rhumb line) route:
-  heading -83°58.8'
+  heading -83Â°58.8'
   distance 7460.96 km   4028 nm
 orthodrom (great circle) route:
-  departure heading 58°32.0'  arrival heading 130°44.5'
+  departure heading 58Â°32.0'  arrival heading 130Â°44.5'
   distance 7018.95 km   3789 nm
 ```
 
@@ -142,10 +142,10 @@ orthodrom (great circle) route:
 Show detailed info about any navigation points in the database or details of your flight plan.
 ```
 # show info ptb
-Nav point: PTB LH N47°09.1' E18°44.5'
+Nav point: PTB LH N47Â°09.1' E18Â°44.5'
   VOR+DME: 11710 MHz
   PUSZTASZABOLCS VOR/DME
-  magnetic variation: 5°00.0'
+  magnetic variation: 5Â°00.0'
   elevation: 430 ft
 ```
 
@@ -161,26 +161,26 @@ direct distance orthodrom: 856 km, 462 nm
 direct distance loxodrom: 857 km, 462 nm
 #########################################
 sid: ROCA5A RW22
-    PAS N46°09.8' E5°59.9'
-    PAS N46°09.8' E5°59.9'
-  D131I N46°03.7' E6°09.4'
-  PAS14 N46°00.3' E6°14.8'
-  ODIKI N45°56.5' E6°20.6'
-  PAS33 N45°47.3' E6°34.6'
-  ROCCA N45°44.7' E6°38.7'
+    PAS N46Â°09.8' E5Â°59.9'
+    PAS N46Â°09.8' E5Â°59.9'
+  D131I N46Â°03.7' E6Â°09.4'
+  PAS14 N46Â°00.3' E6Â°14.8'
+  ODIKI N45Â°56.5' E6Â°20.6'
+  PAS33 N45Â°47.3' E6Â°34.6'
+  ROCCA N45Â°44.7' E6Â°38.7'
 enroute:
-    CHI N45°04.2' E12°16.8'
-    SRN N45°38.7' E9°01.2'
+    CHI N45Â°04.2' E12Â°16.8'
+    SRN N45Â°38.7' E9Â°01.2'
 star: SAL1Y RW23
-    SAL N43°56.2' E15°10.0'
-  SP710 N43°44.6' E15°24.2'
-  SP709 N43°33.7' E15°37.3'
-  KEMIX N43°18.7' E15°55.4'
-  SP701 N43°14.2' E16°09.2'
-  LASUL N43°20.5' E16°12.9'
+    SAL N43Â°56.2' E15Â°10.0'
+  SP710 N43Â°44.6' E15Â°24.2'
+  SP709 N43Â°33.7' E15Â°37.3'
+  KEMIX N43Â°18.7' E15Â°55.4'
+  SP701 N43Â°14.2' E16Â°09.2'
+  LASUL N43Â°20.5' E16Â°12.9'
 approach: I31R-NICRA
-  NICRA N47°21.3' E19°34.9'
-  BP865 N47°17.6' E19°29.9'
+  NICRA N47Â°21.3' E19Â°34.9'
+  BP865 N47Â°17.6' E19Â°29.9'
 ```
 
 #### show metar
@@ -192,7 +192,7 @@ LHBP 271800Z 08006G16KT 050V120 CAVOK M00/M06 Q1024 NOSIG
 ```
 This command requires an API token from the AVWX web site. See the details in [token registration](doc/api-token-registration.md).
 
-[Api Token Registration](doc/api-token-registration.md)#### show taf
+#### show taf
 This command fetches the actual TAF from AVWX services. Use the icao 
 id of airport as a parameter:
 ```
@@ -323,8 +323,8 @@ direct distance orthodrom: 856 km, 462 nm
 direct distance loxodrom: 857 km, 462 nm
 #########################################
 enroute:
-    SRN N45°38.7' E9°01.2'
-    CHI N45°04.2' E12°16.8'
+    SRN N45Â°38.7' E9Â°01.2'
+    CHI N45Â°04.2' E12Â°16.8'
 
 # route insert --after 0 uvnon
 
@@ -337,9 +337,9 @@ direct distance orthodrom: 856 km, 462 nm
 direct distance loxodrom: 857 km, 462 nm
 #########################################
 enroute:
-    SRN N45°38.7' E9°01.2'
-  UVNON N45°16.9' E10°53.5'
-    CHI N45°04.2' E12°16.8'
+    SRN N45Â°38.7' E9Â°01.2'
+  UVNON N45Â°16.9' E10Â°53.5'
+    CHI N45Â°04.2' E12Â°16.8'
 ```
 In the above example I inserted a new point (UVNON) after the first (0 index) nav point (which is SRN). You can 
 see the result after the show flight_plan command.
