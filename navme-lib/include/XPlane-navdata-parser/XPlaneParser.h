@@ -13,7 +13,6 @@
 #include "../NavPoint.h"
 #include "../Airport.h"
 #include "../RNAVProc.h"
-#include "../NavMeLibExport.h"
 
 const std::string RE_FLOAT = "([+-]*[0-9\\.]+)";
 const std::string RE_INT = "([+-]*[0-9]+)";
@@ -55,7 +54,7 @@ const std::string APT_PROC_LINE = "(SID|STAR|APPCH):([0-9]+)," +
 									RE_ID_S + "," + //7: Region ID
 									".+;";
 
-class EXPORT XPlaneParser {
+class XPlaneParser {
 private:
 	std::list<NavPoint> _nav_points;
 	std::list<Airport> _airports;

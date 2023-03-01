@@ -17,3 +17,5 @@
 #include "RNAVProc.h"
 #include "FlightRoute.h"
 #include "XPlane-navdata-parser\XPlaneParser.h"
+
+#define NAVME_LIB_VERSION "v0.3"
