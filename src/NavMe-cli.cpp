@@ -14,7 +14,18 @@
 
 int main(void) {
     std::string line;
+
+    std::ifstream banner("banner.txt");
+    if (banner.good())
+    {
+        std::stringstream buffer;
+        buffer << banner.rdbuf();
+        std::cout << buffer.str() << std::endl;
+        banner.close();
+    }
+
     std::cout << "NavMe CLI. built at " << __DATE__ <<" " << __TIME__ << std::endl;
+    std::cout << "navMe LIB version: " << NAVME_LIB_VERSION << std::endl;
     std::cmatch m;
 
     const std::string config_file_name = "navme-cli.ini";
@@ -31,6 +42,11 @@ int main(void) {
     GlobalOptions::get_instance()->get_option("XPLANE_ROOT", xplane_root);
     std::cout << "Navigation data source: " << xplane_root << "\\Custom Data" << std::endl;
     Logger(logINFO) << "CLI: Navigation data source: " << xplane_root << "\\Custom Data" << std::endl;
+
+    if (!std::filesystem::exists(std::filesystem::path(xplane_root + "\\Custom Data")))
+    {
+        std::cout << "error: navigation data source can't open. Check XPLANE_ROOT in config file!" << std::endl;
+    }
 
     std::string log_level_str;
     GlobalOptions::get_instance()->get_option("LOG_LEVEL", log_level_str);

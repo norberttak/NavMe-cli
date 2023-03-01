@@ -43,6 +43,10 @@ jobs:
           mkdir built-application-windows/html-report-template
           cp html-report-template/flight_plan_template.html built-application-windows/html-report-template/
 
+      - name: Copy banner file
+        run: |
+          cp banner.txt built-application-windows/    
+          
       - name: Create export directory
         run: |
           mkdir built-application-windows/export
