@@ -43,7 +43,8 @@ private:
 	XPlaneParser& navdata_parser;
 	FlightRoute flight_route;
 	std::map<std::string, f_command_handler> command_handlers;
-	bool get_and_remove_parameter_value(std::string param_name, std::vector<std::string>& parameters, std::string& out_value);
+	bool get_and_remove_parameter_name_value(std::string param_name, std::vector<std::string>& parameters, std::string& out_value);
+	bool get_and_remove_parameter_name(std::string param_name, std::vector<std::string>& parameters);
 	std::string strip_nav_point_name(std::string nav_point_name);
 	bool create_html_based_on_template(std::string template_file_name, std::string html_file_name, HtmlTemplateParameters& template_params);
 	bool handle_export_flight_plan_html(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);

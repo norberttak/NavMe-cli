@@ -657,6 +657,19 @@ bool CommandParser::get_and_remove_parameter_name_value(std::string param_name, 
 	return false;
 }
 
+bool CommandParser::get_and_remove_parameter_name(std::string param_name, std::vector<std::string>& parameters)
+{
+	for (std::vector<std::string>::iterator it = parameters.begin(); it < parameters.end(); it++)
+	{
+		if (*it == param_name)
+		{
+			parameters.erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+
 bool CommandParser::handle_route_add(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
 	// remove any --after or --before option from parameter list
