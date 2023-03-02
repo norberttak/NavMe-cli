@@ -21,7 +21,7 @@
 bool CommandParser::handle_export_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
 	std::string format_str = "HTML";
-	get_and_remove_parameter_value("--FORMAT", parameters, format_str);
+	get_and_remove_parameter_name_value("--FORMAT", parameters, format_str);
 	
 	if (format_str == "HTML")
 	{
@@ -195,7 +195,7 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 	html_template.total_route_length = std::to_string((int)(KM_TO_NM * total_route_length)) + "nm " + std::to_string((int)total_route_length) + "km";
 
 	std::string file_name_str = "";
-	if (get_and_remove_parameter_value("--FILE", parameters, file_name_str))
+	if (get_and_remove_parameter_name_value("--FILE", parameters, file_name_str))
 		file_name_str = "export/" + file_name_str;
 	else
 		file_name_str = "export/" + html_template.title + ".html";
@@ -641,7 +641,7 @@ bool CommandParser::handle_set_app(std::string main_cmd, std::string sub_cmd, st
 	return false;
 }
 
-bool CommandParser::get_and_remove_parameter_value(std::string param_name, std::vector<std::string>& parameters, std::string& out_value)
+bool CommandParser::get_and_remove_parameter_name_value(std::string param_name, std::vector<std::string>& parameters, std::string& out_value)
 {
 	for (std::vector<std::string>::iterator it = parameters.begin(); it < parameters.end(); it++)
 	{
@@ -662,8 +662,8 @@ bool CommandParser::handle_route_add(std::string main_cmd, std::string sub_cmd, 
 	// remove any --after or --before option from parameter list
 	std::string insert_pos_before_string = "";
 	std::string insert_pos_after_string = "";
-	get_and_remove_parameter_value("--BEFORE", parameters, insert_pos_before_string);
-	get_and_remove_parameter_value("--AFTER", parameters, insert_pos_after_string);
+	get_and_remove_parameter_name_value("--BEFORE", parameters, insert_pos_before_string);
+	get_and_remove_parameter_name_value("--AFTER", parameters, insert_pos_after_string);
 
 	return handle_route_insert(main_cmd, sub_cmd, parameters);
 }
@@ -684,9 +684,9 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 	std::string insert_pos_after_string = "";
 	int insert_index = -1;
 
-	get_and_remove_parameter_value("--REGION", parameters, region);
-	get_and_remove_parameter_value("--BEFORE", parameters, insert_pos_before_string);
-	get_and_remove_parameter_value("--AFTER", parameters, insert_pos_after_string);
+	get_and_remove_parameter_name_value("--REGION", parameters, region);
+	get_and_remove_parameter_name_value("--BEFORE", parameters, insert_pos_before_string);
+	get_and_remove_parameter_name_value("--AFTER", parameters, insert_pos_after_string);
 
 	if (insert_pos_before_string != "")
 	{
