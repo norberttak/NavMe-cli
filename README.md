@@ -14,6 +14,7 @@ It has key-value pairs like other ini files.
 XPLANE_ROOT=C:\X-Plane 12
 ANGLE_FORMAT=ANGLE_DEG_DECMIN
 LOG_LEVEL=INFO
+AVWX_API_TOKEN=xxxxxxx
 ```
 Please double check the first element (XPLANE_ROOT) is the valid path to your XPlane's root folder.
 
@@ -118,7 +119,7 @@ APP: I31R-NICRA
 #### set option {#set_option}
 set option key-value pair to a new value. Please note: this change won't be saved to
 the navme-cli.ini file and changes will lost when you exit the application. If you 
-to set an option permanently please edit the navme-cli.ini.
+want to set an option permanently please edit the navme-cli.ini.
 
 ```# set option ANGLE_FORMAT ANGLE_DEG_MIN_SEC```
 

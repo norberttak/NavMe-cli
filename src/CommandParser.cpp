@@ -18,11 +18,50 @@
 
 #define KM_TO_NM 0.5399568
 
+bool CommandParser::get_and_remove_parameter_name_value(std::string param_name, std::vector<std::string>& parameters, std::string& out_value)
+{
+	for (std::vector<std::string>::iterator it = parameters.begin(); it < parameters.end(); it++)
+	{
+		if (*it == param_name && (it + 1) != parameters.end())
+		{
+			out_value = *(it + 1);
+
+			parameters.erase(it, it + 2);
+
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CommandParser::get_and_remove_parameter_name(std::string param_name, std::vector<std::string>& parameters)
+{
+	for (std::vector<std::string>::iterator it = parameters.begin(); it < parameters.end(); it++)
+	{
+		if (*it == param_name)
+		{
+			parameters.erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+
 bool CommandParser::handle_export_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Export the flight plan into html format. The file will be saved in the export folder. If no file name specified (--file)" << std::endl;
+		std::cout << "the default file name will be ICAO id's of airports: export/<departure-icao>_<arrival-icao.html>";
+		std::cout << "  export flight_plan [--file <file_name>]" << std::endl;
+		std::cout << "  --file <file_name>: optional parameter. Specifies the file name that will be created." << std::endl;
+		std::cout << "  example: export flight_plan" << std::endl;
+		return true;
+	}
+
 	std::string format_str = "HTML";
-	get_and_remove_parameter_value("--FORMAT", parameters, format_str);
-	
+	get_and_remove_parameter_name_value("--FORMAT", parameters, format_str);
+
 	if (format_str == "HTML")
 	{
 		return handle_export_flight_plan_html(main_cmd, sub_cmd, parameters);
@@ -47,7 +86,7 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 
 	std::string html_file_content = "";
 	std::string line;
-	
+
 	while (std::getline(i_template, line))
 	{
 		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_TITLE), template_params.title);
@@ -61,10 +100,10 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 
 		const auto now = std::chrono::system_clock::now();
 		line = std::regex_replace(line, std::regex(RE_HTML_TEMPLATE_DATE_TIME), std::format("{:%d-%m-%Y %H:%M:%OS}", now));
-		
+
 		line = std::regex_replace(line, std::regex("[º]+"), "&deg;");
 		line = std::regex_replace(line, std::regex("[ø]+"), "&deg;");
-		
+
 		html_file_content += line + "\n";
 	}
 
@@ -93,7 +132,7 @@ bool CommandParser::create_html_based_on_template(std::string template_file_name
 bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
 	HtmlTemplateParameters html_template;
-	
+
 	html_template.departure = flight_route.departure_airport.get_icao_id();
 
 	html_template.destination = flight_route.destination_airport.get_icao_id();
@@ -110,12 +149,12 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 		Coordinate dest_coordinate = flight_route.destination_airport.get_coordinate();
 		RelativePos rel_pos;
 		flight_route.departure_airport.get_coordinate().get_relative_pos_to(dest_coordinate, rel_pos);
-		html_template.direct_dist_great = std::to_string((int)(KM_TO_NM*rel_pos.dist_ortho)) + "nm " + std::to_string((int)rel_pos.dist_ortho) + "km";
-		html_template.direct_dist_rumb =  std::to_string((int)(KM_TO_NM * rel_pos.dist_loxo)) + "nm " + std::to_string((int)rel_pos.dist_loxo) + "km";
+		html_template.direct_dist_great = std::to_string((int)(KM_TO_NM * rel_pos.dist_ortho)) + "nm " + std::to_string((int)rel_pos.dist_ortho) + "km";
+		html_template.direct_dist_rumb = std::to_string((int)(KM_TO_NM * rel_pos.dist_loxo)) + "nm " + std::to_string((int)rel_pos.dist_loxo) + "km";
 	}
 
 	std::vector<NavPoint> all_nav_points = flight_route.get_all_navpoints();
-	
+
 	int index_sid = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_SID);
 	int index_enroute = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_OTHER);
 	int index_star = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_STAR);
@@ -131,10 +170,10 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 		std::replace(coordinate_str.begin(), coordinate_str.end(), char(248), char(186));
 
 		RelativePos rel_pos;
-		if (nav_point_index < all_nav_points.size()-1)
+		if (nav_point_index < all_nav_points.size() - 1)
 		{
 			Coordinate next_coord = all_nav_points[nav_point_index + 1].get_coordinate();
-			np.get_coordinate().get_relative_pos_to(next_coord,rel_pos);
+			np.get_coordinate().get_relative_pos_to(next_coord, rel_pos);
 		}
 
 		total_route_length += rel_pos.dist_loxo;
@@ -150,7 +189,7 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 		if (index_sid >= 0 && nav_point_index == index_sid)
 		{
 			proc_td_class_str = "sid";
-			flight_phase_str = "<td class=\""+ proc_td_class_str +"\">SID<br>" + flight_route.sid.get_name() + "</td>\n";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">SID<br>" + flight_route.sid.get_name() + "</td>\n";
 		}
 		else if (index_enroute >= 0 && nav_point_index == index_enroute)
 		{
@@ -160,12 +199,12 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 		else if (index_star >= 0 && nav_point_index == index_star)
 		{
 			proc_td_class_str = "star";
-			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">STAR<br>"+ flight_route.star.get_name() +"</td>\n";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">STAR<br>" + flight_route.star.get_name() + "</td>\n";
 		}
 		else if (index_approach >= 0 && nav_point_index == index_approach)
 		{
 			proc_td_class_str = "app";
-			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Approach<br>"+ flight_route.approach.get_name() +"</td>\n";
+			flight_phase_str = "<td class=\"" + proc_td_class_str + "\">Approach<br>" + flight_route.approach.get_name() + "</td>\n";
 		}
 		else
 		{
@@ -179,8 +218,8 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 			"<td>" + coordinate_str + "</td>\n" +
 			"<td>" + np.get_name() +
 			(np.get_radio_frequency() != 0 ? ("<br>" + std::to_string(np.get_radio_frequency()) + "</td>\n") : "</td>\n") +
-			(nav_point_index < all_nav_points.size()-1 ? "<td>" + hdg_ortho_str + "</td>\n" : "<td></td>\n") +
-			(nav_point_index < all_nav_points.size()-1 ? "<td>" + dist_ortho + "</td>\n" : "<td></td>\n") +
+			(nav_point_index < all_nav_points.size() - 1 ? "<td>" + hdg_ortho_str + "</td>\n" : "<td></td>\n") +
+			(nav_point_index < all_nav_points.size() - 1 ? "<td>" + dist_ortho + "</td>\n" : "<td></td>\n") +
 			"</tr>\n";
 
 		html_template.table_nav_point_coords += "[" +
@@ -195,7 +234,7 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 	html_template.total_route_length = std::to_string((int)(KM_TO_NM * total_route_length)) + "nm " + std::to_string((int)total_route_length) + "km";
 
 	std::string file_name_str = "";
-	if (get_and_remove_parameter_value("--FILE", parameters, file_name_str))
+	if (get_and_remove_parameter_name_value("--FILE", parameters, file_name_str))
 		file_name_str = "export/" + file_name_str;
 	else
 		file_name_str = "export/" + html_template.title + ".html";
@@ -205,6 +244,15 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 
 bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Show the complete flight plan you created previously with the set commands." << std::endl;
+		std::cout << "If you need a more fancy output format check the 'export flightplan'" << std::endl;
+		std::cout << "  show flight_plan" << std::endl;
+		std::cout << "  example: show flight_plan" << std::endl;
+		return true;
+	}
+
 	RelativePos rel_pos;
 	Coordinate last_point_coordinate;
 
@@ -224,7 +272,7 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 	std::cout << "#########################################" << std::endl;
 
 	std::vector<NavPoint> all_nav_points = flight_route.get_all_navpoints();
-	
+
 	int index_sid = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_SID);
 	int index_enroute = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_OTHER);
 	int index_star = flight_route.get_start_index_of_phase(RNAVProc::RNAVProcType::RNAV_STAR);
@@ -260,13 +308,13 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 
 		std::cout << "  "
 			<< std::setw(5) << std::setfill(' ') << np.get_icao_id()
-			<< " "			
+			<< " "
 			<< np.get_coordinate().to_string() << " "
 			<< (nav_point_index < all_nav_points.size() - 1 ? " " + hdg_ortho_str : "")
 			<< (nav_point_index < all_nav_points.size() - 1 ? " " + dist_ortho : "")
 			<< std::endl;
 
-		std::cout << (np.get_radio_frequency() != 0 ? ("      " + np.get_name()+ ": " + std::to_string(np.get_radio_frequency()) + "\n") : "");
+		std::cout << (np.get_radio_frequency() != 0 ? ("      " + np.get_name() + ": " + std::to_string(np.get_radio_frequency()) + "\n") : "");
 
 		nav_point_index++;
 	}
@@ -275,6 +323,15 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 
 bool CommandParser::handle_show_direct(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Show the distance and bearing between any two navigation points (airports, vor, ndb, etc) in the database." << std::endl;
+		std::cout << "It calculate the distanceand bearings in both great circle(orthodrom) and rhumb line(loxodrom) as well." << std::endl;
+		std::cout << "  show direct <navpoint1> <navpoint2>" << std::endl;
+		std::cout << "  example: show direct EGLL ATICO" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 2)
 	{
 		std::cout << "error: invalid command syntax. show direct <id1> <id2>" << std::endl;
@@ -328,6 +385,14 @@ bool CommandParser::handle_show_direct(std::string main_cmd, std::string sub_cmd
 
 bool CommandParser::handle_show_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "show the value of key-value pair in the options" << std::endl;
+		std::cout << "  show option <option_key>" << std::endl;
+		std::cout << "  example: show option ANGLE_FORMAT" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() == 0)
 	{
 		std::cout << "error: show option <option_name>" << std::endl;
@@ -359,6 +424,14 @@ bool CommandParser::handle_show_option(std::string main_cmd, std::string sub_cmd
 
 bool CommandParser::handle_show_info(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Show detailed info about any navigation points in the database." << std::endl;
+		std::cout << "  show info <navpoint>" << std::endl;
+		std::cout << "  example: show info PTB" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() == 0)
 	{
 		std::cout << "error: invalid command syntax. show info <id>" << std::endl;
@@ -406,7 +479,7 @@ bool CommandParser::handle_show_info(std::string main_cmd, std::string sub_cmd, 
 		for (Runway& rwy : airport.get_runways())
 		{
 			if (rwy.get_ils_freq() != 0)
-			{				
+			{
 				std::cout << "  " << rwy.get_name() << " course:" << rwy.get_course() << " ils freq: " << rwy.get_ils_freq() << std::endl;
 			}
 			else
@@ -419,10 +492,21 @@ bool CommandParser::handle_show_info(std::string main_cmd, std::string sub_cmd, 
 }
 
 /*This function queries the actual metar or taf for a given airport. The data is fetched from http://avwx.rest service.
-  As the metar and taf query almost the same we use a common function for them. The sub_cmd parameter determines what 
-  do we want to query (mtera or taf) */
+  As the metar and taf query almost the same we use a common function for them. The sub_cmd parameter determines what
+  do we want to query (metra or taf) */
 bool CommandParser::handle_show_metar_taf(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "This command fetches the actual METAR or TAF from AVWX services." << std::endl;
+		std::cout << "Use the icao id of airport as a parameter." << std::endl;
+		std::cout << "This command requires an API token from the AVWX web site." << std::endl;
+		std::cout << "  show metar <airport_icao_id>" << std::endl;
+		std::cout << "  show taf <airport_icao_id>" << std::endl;
+		std::cout << "  example: show info PTB" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 1)
 	{
 		std::cout << "error: not enough parameter" << std::endl;
@@ -433,8 +517,8 @@ bool CommandParser::handle_show_metar_taf(std::string main_cmd, std::string sub_
 	if (!GlobalOptions::get_instance()->get_option("AVWX_API_TOKEN", avwx_api_token))
 	{
 		std::cout << "error: can't read API token from config file" << std::endl;
-	}	
-	
+	}
+
 	std::transform(sub_cmd.begin(), sub_cmd.end(), sub_cmd.begin(), ::tolower);
 
 	httplib::Client cli("http://avwx.rest");
@@ -458,11 +542,21 @@ bool CommandParser::handle_show_metar_taf(std::string main_cmd, std::string sub_
 	{
 		std::cout << "error: unable to query metar" << std::endl;
 		return false;
-	}	
+	}
 }
 
 bool CommandParser::handle_set_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "set option key-value pair to a new value." << std::endl; 
+		std::cout << "Please note : this change won't be saved to the navme-cli.ini file and changes will lost when you exit the application." << std::endl;
+		std::cout << "If you want to set an option permanently please edit the navme - cli.ini." << std::endl;
+		std::cout << "  set option <option_key> <option_value>" << std::endl;
+		std::cout << "  example: set option ANGLE_FORMAT ANGLE_DEG_MIN_SEC" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 2)
 	{
 		std::cout << "error: not enough parameter" << std::endl;
@@ -480,6 +574,14 @@ bool CommandParser::handle_set_option(std::string main_cmd, std::string sub_cmd,
 
 bool CommandParser::handle_set_departure(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Set departure airport. Use the ICAO id of the airport." << std::endl;
+		std::cout << "  set dep <airport_icao_id>" << std::endl;
+		std::cout << "  example: set dep lhbp" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 1)
 	{
 		std::cout << "wrong command. syntax: set dep <airport_icao>" << std::endl;
@@ -501,6 +603,14 @@ bool CommandParser::handle_set_departure(std::string main_cmd, std::string sub_c
 
 bool CommandParser::handle_set_dest(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Set destination airport. Use the ICAO id of the airport." << std::endl;
+		std::cout << "  set dest <airport_icao_id>" << std::endl;
+		std::cout << "  example: set dest egll" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 1)
 	{
 		std::cout << "wrong command. syntax: set dest <airport_icao>" << std::endl;
@@ -523,6 +633,15 @@ bool CommandParser::handle_set_dest(std::string main_cmd, std::string sub_cmd, s
 
 bool CommandParser::handle_set_sid(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Set SID (Standard Instrumental Departure) to your flight plan." << std::endl;
+		std::cout << "Before use this command please set your departure airport." << std::endl;
+		std::cout << "  set sid <sid_procedure_id>" << std::endl;
+		std::cout << "  example: set sid litk2b" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 1)
 	{
 		std::cout << "wrong command. syntax: set sid <sid id>" << std::endl;
@@ -563,6 +682,15 @@ bool CommandParser::handle_set_sid(std::string main_cmd, std::string sub_cmd, st
 
 bool CommandParser::handle_set_star(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Set STAR (STandard Arrival Route) to your flight plan." << std::endl;
+		std::cout << "Before use this command please set your destination airport." << std::endl;
+		std::cout << "  set star <star_procedure_id>" << std::endl;
+		std::cout << "  example: set star DEVU1H" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 1)
 	{
 		std::cout << "wrong command. syntax: set star <star id>" << std::endl;
@@ -603,6 +731,15 @@ bool CommandParser::handle_set_star(std::string main_cmd, std::string sub_cmd, s
 
 bool CommandParser::handle_set_app(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Set approach procedure to your flight plan." << std::endl;
+		std::cout << "Before use this command please set your destination airport." << std::endl;
+		std::cout << "  set app <approach_procedure_id>" << std::endl;
+		std::cout << "  example: set app R28-ADOVA" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 1)
 	{
 		std::cout << "wrong command. syntax: set app <approach id>" << std::endl;
@@ -641,29 +778,22 @@ bool CommandParser::handle_set_app(std::string main_cmd, std::string sub_cmd, st
 	return false;
 }
 
-bool CommandParser::get_and_remove_parameter_value(std::string param_name, std::vector<std::string>& parameters, std::string& out_value)
-{
-	for (std::vector<std::string>::iterator it = parameters.begin(); it < parameters.end(); it++)
-	{
-		if (*it == param_name && (it + 1) != parameters.end())
-		{
-			out_value = *(it + 1);
-
-			parameters.erase(it, it + 2);
-
-			return true;
-		}
-	}
-	return false;
-}
-
 bool CommandParser::handle_route_add(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Add navigation point(s) to th en-route section of flight plan." << std::endl;
+		std::cout << "  route add [--region <icao_region>] <nav_point0> [<nav_point1> <nav_point2>...]" << std::endl;
+		std::cout << "  --region <icao_region>: optional parameter. If a navpoint in unambiguous (appears in multiple regions) you can specify the region." << std::endl;
+		std::cout << "  example: route add PTB ATICO" << std::endl;
+		return true;
+	}
+
 	// remove any --after or --before option from parameter list
 	std::string insert_pos_before_string = "";
 	std::string insert_pos_after_string = "";
-	get_and_remove_parameter_value("--BEFORE", parameters, insert_pos_before_string);
-	get_and_remove_parameter_value("--AFTER", parameters, insert_pos_after_string);
+	get_and_remove_parameter_name_value("--BEFORE", parameters, insert_pos_before_string);
+	get_and_remove_parameter_name_value("--AFTER", parameters, insert_pos_after_string);
 
 	return handle_route_insert(main_cmd, sub_cmd, parameters);
 }
@@ -679,14 +809,25 @@ std::string CommandParser::strip_nav_point_name(std::string nav_point_name)
 
 bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Insert navigation point(s) into the en-route section of flight plan." << std::endl;
+		std::cout << "  route insert [--region <icao_region>] [--before <index>] [--after <index>] <nav_point0> [<nav_point1> <nav_point2>...]" << std::endl;
+		std::cout << "  --region <icao_region>: optional parameter. If a navpoint in unambiguous (appears in multiple regions) you can specify the region." << std::endl;
+		std::cout << "  --before <index>: insert new nav points before the <index> position. This is a zero based index!" << std::endl;
+		std::cout << "  --after <index>: insert new nav points after the <index> position. This is a zero based index!" << std::endl;
+		std::cout << "  example: route insert --after 2 PTB ATICO" << std::endl;
+		return true;
+	}
+
 	std::string region = "";
 	std::string insert_pos_before_string = "";
 	std::string insert_pos_after_string = "";
 	int insert_index = -1;
 
-	get_and_remove_parameter_value("--REGION", parameters, region);
-	get_and_remove_parameter_value("--BEFORE", parameters, insert_pos_before_string);
-	get_and_remove_parameter_value("--AFTER", parameters, insert_pos_after_string);
+	get_and_remove_parameter_name_value("--REGION", parameters, region);
+	get_and_remove_parameter_name_value("--BEFORE", parameters, insert_pos_before_string);
+	get_and_remove_parameter_name_value("--AFTER", parameters, insert_pos_after_string);
 
 	if (insert_pos_before_string != "")
 	{
@@ -719,7 +860,7 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 	{
 		if (nav_point_id == "DCT")
 			continue;
-		
+
 		//airways has 4 letter identifiers. skip them.
 		if (nav_point_id.length() == 4)
 			continue;
@@ -738,7 +879,7 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 		}
 
 		if (nav_points.size() > 1)
-		{			
+		{
 			for (auto& np : nav_points)
 			{
 				std::cout << "  id:" << np.get_icao_id() << " name:" << np.get_name() << " region:" << np.get_icao_region() << std::endl;
@@ -748,8 +889,8 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 			std::string input_region;
 			std::cout << "? ";
 			std::getline(std::cin, input_region);
-			std::transform(input_region.begin(), input_region.end(), input_region.begin(), ::toupper);			
-			
+			std::transform(input_region.begin(), input_region.end(), input_region.begin(), ::toupper);
+
 			nav_points = navdata_parser.get_nav_points_by_icao_id(input_region, nav_point_id);
 			if (nav_points.size() == 0)
 			{
@@ -757,7 +898,7 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 				return true;
 			}
 		}
-		
+
 		nav_points_to_add.emplace_back(nav_points.front());
 	}
 
@@ -774,6 +915,17 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 
 bool CommandParser::handle_route_remove(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Remove navigation point(s) from the en-route section of flight plan." << std::endl;
+		std::cout << "  route remove <index>[:<index2>]" << std::endl;
+		std::cout << "  <index>: Index of the element to be removed. Zero based index!" << std::endl;
+		std::cout << "  <index>:<index2>: Index range of the elements to be removed. These are zero based indexes!" << std::endl;		
+		std::cout << "  example: route remove 2" << std::endl;
+		std::cout << "  example: route remove 0:3" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() != 1)
 	{
 		std::cout << "error: use 'route remove index' or 'route remove index1:index2'" << std::endl;
@@ -802,6 +954,15 @@ bool CommandParser::handle_route_remove(std::string main_cmd, std::string sub_cm
 
 bool CommandParser::handle_list_rnav(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
 {
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Lists available RNAV procedures (SID/STAR/Approach) for a given airport" << std::endl;
+		std::cout << "  list <sid|star|app> [<airport_icao_id>]" << std::endl;
+		std::cout << "  if you don't specifies airport id, it will use (if set before) the departure or destination airport ids accordingly" << std::endl;
+		std::cout << "  example: list sid lhbp" << std::endl;
+		return true;
+	}
+
 	if (parameters.size() < 1)
 	{
 		// if departure or destination airport is set AND no airport in the parameters try to use
@@ -836,6 +997,35 @@ bool CommandParser::handle_list_rnav(std::string main_cmd, std::string sub_cmd, 
 	}
 
 	return true;
+}
+
+bool CommandParser::handle_help(std::string sub_command)
+{
+	if (sub_command == "")
+	{
+		std::cout << "Available main commands:" << std::endl;
+		std::cout << "  set" << std::endl;
+		std::cout << "  show" << std::endl;
+		std::cout << "  list" << std::endl;
+		std::cout << "  route" << std::endl;
+		std::cout << "  export" << std::endl;
+		std::cout << "for detailed information use the 'help <cmd_name>' command" << std::endl;
+		return true;
+	}
+	else
+	{
+		std::cout << "Available sub-commands:" << std::endl;
+		for (auto& cmd : command_handlers)
+		{
+			if (cmd.first.starts_with(sub_command))
+			{
+				size_t index = cmd.first.find("__", 0);
+				std::string str = cmd.first.substr(index + 2);
+				std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+				std::cout << "  " << str << std::endl;
+			}
+		}
+	}
 }
 
 CommandParser::CommandParser(XPlaneParser& _navdata_parser) :
@@ -881,19 +1071,42 @@ bool CommandParser::parse_and_dispatch_command(std::string line)
 			tokenized.erase(st_it);
 	}
 
-	if (tokenized.size() > 1)
+	if (tokenized.size() > 0)
 	{
-		std::vector<std::string> parameters(tokenized.begin() + 2, tokenized.end());
-
-		f_command_handler f_handler = command_handlers[tokenized[0] + "__" + tokenized[1]];
-
-		if (f_handler == NULL)
+		std::vector<std::string> parameters;
+		if (tokenized[0] == "HELP")
 		{
-			std::cout << "unknown command: " << line << std::endl;
-			return false;
+			if (tokenized.size() == 1)
+				return handle_help("");
+			else if (tokenized.size() == 2)
+				return handle_help(tokenized[1]);
+			else
+			{
+				// move "HELP" command as a --HELP parameter to the end of the command
+				std::copy(tokenized.begin() + 1, tokenized.end(), tokenized.begin());
+				tokenized.erase(tokenized.end() - 1);
+				parameters.emplace_back("--HELP");
+			}
 		}
 
-		(this->*f_handler)(tokenized[0], tokenized[1], parameters);
+		if (tokenized.size() > 1)
+		{
+			for (auto it = tokenized.begin() + 2; it < tokenized.end(); it++)
+			{
+				parameters.emplace_back(*it);
+			}
+
+			f_command_handler f_handler = command_handlers[tokenized[0] + "__" + tokenized[1]];
+
+			if (f_handler == NULL)
+			{
+				std::cout << "unknown command: " << line << std::endl;
+				return false;
+			}
+
+			(this->*f_handler)(tokenized[0], tokenized[1], parameters);
+		}
 	}
+
 	return true;
 }

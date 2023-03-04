@@ -32,7 +32,7 @@ int main(void) {
     if (!GlobalOptions::get_instance()->load_options_from_file(config_file_name))
     {
         GlobalOptions::get_instance()->set_option("ANGLE_FORMAT", "ANGLE_DEG_DECMIN");
-        GlobalOptions::get_instance()->set_option("XPLANE_ROOT", "C:\\XPlane 12");
+        GlobalOptions::get_instance()->set_option("XPLANE_ROOT", "C:\\X-Plane 12");
         GlobalOptions::get_instance()->set_option("LOG_LEVEL", "INFO");
         std::cout << config_file_name << " config file doesn't exist. creating one." << std::endl;
         GlobalOptions::get_instance()->save_options_to_file(config_file_name);
