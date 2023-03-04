@@ -49,6 +49,8 @@ private:
 	bool create_html_based_on_template(std::string template_file_name, std::string html_file_name, HtmlTemplateParameters& template_params);
 	bool handle_export_flight_plan_html(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 
+	bool handle_help(std::string sub_command);
+
 	bool handle_show_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 	bool handle_show_direct(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 	bool handle_show_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
