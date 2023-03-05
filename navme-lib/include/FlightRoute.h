@@ -3,6 +3,7 @@
 #include "Airport.h"
 #include "RNAVProc.h"
 #include "NavPoint.h"
+#include "XPlane-navdata-parser/XPlaneParser.h"
 
 class FlightRoute {
 private:
@@ -18,4 +19,6 @@ public:
     Airport alternate_airport;
     std::vector<NavPoint> get_all_navpoints();
     int get_start_index_of_phase(RNAVProc::RNAVProcType type);
+    bool save_to_file(std::string file_name);
+    bool load_from_file(std::string file_name, XPlaneParser& parser);
 };

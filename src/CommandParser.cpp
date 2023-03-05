@@ -999,6 +999,75 @@ bool CommandParser::handle_list_rnav(std::string main_cmd, std::string sub_cmd, 
 	return true;
 }
 
+bool CommandParser::handle_save_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
+{
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Save flight plan to a .route file. The file will be placed into the export folder." << std::endl;
+		std::cout << "  save flight_plan [--file <file_name>]" << std::endl;
+		std::cout << "  if you don't specifies file name to save it will use the departure-destination.route file name by default." << std::endl;
+		std::cout << "  example: save flight_plan" << std::endl;
+		return true;
+	}
+
+	std::string file_name_str = "";
+	if (get_and_remove_parameter_name_value("--FILE", parameters, file_name_str))
+		file_name_str = "export/" + file_name_str;
+	else
+	{
+		if (flight_route.departure_airport.get_icao_id() == "" || flight_route.destination_airport.get_icao_id() == "")
+		{
+			std::cout << "error: set departure and destination airports before save or use --file option" << std::endl;
+			return false;
+		}
+
+		file_name_str = "export/" + flight_route.departure_airport.get_icao_id() + "-" + flight_route.destination_airport.get_icao_id() + ".route";
+	}
+
+	return flight_route.save_to_file(file_name_str);
+}
+
+bool CommandParser::handle_load_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
+{
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Load flight plan from a .route file. The file shall be placed in the export folder." << std::endl;
+		std::cout << "  load flight_plan [--file <file_name>]" << std::endl;
+		std::cout << "  if you don't specifies file name it will lists all .route files in the export folder" << std::endl;
+		std::cout << "  and interactively ask you to choose from a list" << std::endl;
+		std::cout << "  example: load flight_plan" << std::endl;
+		return true;
+	}
+
+	std::string file_name_str = "";
+	if (get_and_remove_parameter_name_value("--FILE", parameters, file_name_str))
+		file_name_str = "export/" + file_name_str;
+	else
+	{
+		std::string path = "export/";
+		int route_file_index = 0;
+		std::vector<std::filesystem::path> route_files;
+
+		for (const auto& entry : std::filesystem::directory_iterator(path))
+		{
+			if (entry.is_regular_file() && entry.path().extension().string() == ".route")
+			{
+				std::cout << route_file_index << ": " << entry.path().filename() << std::endl;
+				route_files.emplace_back(entry);
+				route_file_index++;
+			}
+		}
+		std::cout << "select route file index:" << std::endl;
+		std::string input_line;
+		std::cout << "? ";
+		std::getline(std::cin, input_line);
+		route_file_index = std::stoi(input_line);
+		file_name_str = route_files[route_file_index].string();
+	}
+
+	return flight_route.load_from_file(file_name_str, navdata_parser);
+}
+
 bool CommandParser::handle_help(std::string sub_command)
 {
 	if (sub_command == "")
@@ -1009,6 +1078,8 @@ bool CommandParser::handle_help(std::string sub_command)
 		std::cout << "  list" << std::endl;
 		std::cout << "  route" << std::endl;
 		std::cout << "  export" << std::endl;
+		std::cout << "  save" << std::endl;
+		std::cout << "  load" << std::endl;
 		std::cout << "for detailed information use the 'help <cmd_name>' command" << std::endl;
 		return true;
 	}
@@ -1026,6 +1097,7 @@ bool CommandParser::handle_help(std::string sub_command)
 			}
 		}
 	}
+	return true;
 }
 
 CommandParser::CommandParser(XPlaneParser& _navdata_parser) :
@@ -1039,6 +1111,8 @@ CommandParser::CommandParser(XPlaneParser& _navdata_parser) :
 	command_handlers["SHOW__TAF"] = &CommandParser::handle_show_metar_taf;
 
 	command_handlers["EXPORT__FLIGHT_PLAN"] = &CommandParser::handle_export_flight_plan;
+	command_handlers["SAVE__FLIGHT_PLAN"] = &CommandParser::handle_save_flight_plan;
+	command_handlers["LOAD__FLIGHT_PLAN"] = &CommandParser::handle_load_flight_plan;
 
 	command_handlers["SET__OPTION"] = &CommandParser::handle_set_option;
 	command_handlers["SET__DEP"] = &CommandParser::handle_set_departure;

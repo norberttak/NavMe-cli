@@ -358,3 +358,25 @@ This removes the first enroute point from the flight plan.
 route remove 3:6
 ```
 This removes all the enroute points between index 3 and 6.
+
+### save command
+#### save flight_plan
+Save flight plan to a .route file. The file will be placed into the export folder. It has one 
+optional parameter --file to specify the file name (still can be in the export folder only)
+If you don't specifies file name to save it will use the departure-destination.route file name by default
+```
+save flight_plan 
+```
+
+### load command
+#### load flight_plan
+Load flight plan from a .route file. The file shall be placed in the export folder.
+If you don't specifies file name (--file option) it will lists all .route files in the export folder
+and interactively ask you to choose from a list:
+```
+load flight_plan
+0: "EGLL-LHBP.route"
+1: "LHBP-EPGD.route"
+select route file index:
+? 1
+```
