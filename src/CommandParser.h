@@ -60,6 +60,7 @@ private:
 	bool handle_export_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 	bool handle_save_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 	bool handle_load_flight_plan(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
+	bool handle_load_simbrief(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 
 	bool handle_set_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
 	bool handle_set_departure(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters);
