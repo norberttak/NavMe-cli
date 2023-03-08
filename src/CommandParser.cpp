@@ -874,8 +874,8 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 
 		if (nav_points.size() == 0)
 		{
-			std::cout << "error: unknown nav point " << nav_point_id << std::endl;
-			return false;
+			std::cout << "warning: unknown nav point " << nav_point_id << ". skip it." << std::endl;
+			continue;
 		}
 
 		if (nav_points.size() > 1)
