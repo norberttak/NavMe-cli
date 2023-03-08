@@ -380,3 +380,18 @@ load flight_plan
 select route file index:
 ? 1
 ```
+
+#### load simbrief
+Load your latest OFP from www.simbrief.com. Before use this command please set your 
+SIMBRIEF_USER_ID (this shall be a six digit numeric value) in the config file.
+If you don't know your simbrief userID (or PilotID) open the [account page](https://dispatch.simbrief.com/account) and there you can
+see it:
+
+![Markdown image](doc/simbrief_account.png)
+
+ ```
+ # load simbrief
+ENBR -> REKL1C REKLI VALDI G3 CONNY 63N010W NASBU NASB4N -> BIKF
+import flight from simbrief (y/n)?
+y
+ ```
