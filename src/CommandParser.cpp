@@ -13,7 +13,7 @@
 
 #include "Logger.h"
 #include "CommandParser.h"
-//#define CPPHTTPLIB_OPENSSL_SUPPORT
+ //#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
 
 #define KM_TO_NM 0.5399568
@@ -549,7 +549,7 @@ bool CommandParser::handle_set_option(std::string main_cmd, std::string sub_cmd,
 {
 	if (get_and_remove_parameter_name("--HELP", parameters))
 	{
-		std::cout << "set option key-value pair to a new value." << std::endl; 
+		std::cout << "set option key-value pair to a new value." << std::endl;
 		std::cout << "Please note : this change won't be saved to the navme-cli.ini file and changes will lost when you exit the application." << std::endl;
 		std::cout << "If you want to set an option permanently please edit the navme - cli.ini." << std::endl;
 		std::cout << "  set option <option_key> <option_value>" << std::endl;
@@ -874,8 +874,8 @@ bool CommandParser::handle_route_insert(std::string main_cmd, std::string sub_cm
 
 		if (nav_points.size() == 0)
 		{
-			std::cout << "error: unknown nav point " << nav_point_id << std::endl;
-			return false;
+			std::cout << "warning: unknown nav point " << nav_point_id << ". skip it." << std::endl;
+			continue;
 		}
 
 		if (nav_points.size() > 1)
@@ -920,7 +920,7 @@ bool CommandParser::handle_route_remove(std::string main_cmd, std::string sub_cm
 		std::cout << "Remove navigation point(s) from the en-route section of flight plan." << std::endl;
 		std::cout << "  route remove <index>[:<index2>]" << std::endl;
 		std::cout << "  <index>: Index of the element to be removed. Zero based index!" << std::endl;
-		std::cout << "  <index>:<index2>: Index range of the elements to be removed. These are zero based indexes!" << std::endl;		
+		std::cout << "  <index>:<index2>: Index range of the elements to be removed. These are zero based indexes!" << std::endl;
 		std::cout << "  example: route remove 2" << std::endl;
 		std::cout << "  example: route remove 0:3" << std::endl;
 		return true;
@@ -1068,6 +1068,111 @@ bool CommandParser::handle_load_flight_plan(std::string main_cmd, std::string su
 	return flight_route.load_from_file(file_name_str, navdata_parser);
 }
 
+bool CommandParser::handle_load_simbrief(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
+{
+	if (get_and_remove_parameter_name("--HELP", parameters))
+	{
+		std::cout << "Load your latest OFP from simbrief.com. Before use this command please set your" << std::endl;
+		std::cout << "SIMBRIEF_USER_ID (this shall be a six digit numeric value) in the config file." << std::endl;
+		std::cout << "  example: load simbrief" << std::endl;
+		return true;
+	}
+
+	std::string simbrief_user_id = "";
+	if (!GlobalOptions::get_instance()->get_option("SIMBRIEF_USER_ID", simbrief_user_id))
+	{
+		std::cout << "error: can't read Simbrief user ID from config file" << std::endl;
+	}
+
+	httplib::Client cli("http://www.simbrief.com");
+	std::string simbrief_query_url = "/api/xml.fetcher.php?userid=" + simbrief_user_id + "&json=1";
+	httplib::Result res = cli.Get(simbrief_query_url);
+	if (res == nullptr || res->status != 200)
+	{
+		std::cout << "error: webserver return status: " << (res == nullptr ? "unknown" : httplib::detail::status_message(res->status)) << std::endl;
+		return false;
+	}
+
+	std::string route_summary = res->body;
+	std::string departure_airport = "";
+	std::string destination_airport = "";
+	std::string route_points_list = "";
+
+	std::cmatch m;
+
+	const std::string RE_DEP_STR = ".*\"orig\":\"([A-Z]+)\".*";
+	auto re_dep = std::regex(RE_DEP_STR);
+	if (std::regex_match(route_summary.c_str(), m, re_dep))
+		departure_airport = m[1];
+	else
+		std::cout << "unable to parse departure airport" << std::endl;
+
+	const std::string RE_DEST_STR = ".*\"dest\":\"([A-Z]+)\".*";
+	auto re_dest = std::regex(RE_DEST_STR);
+	if (std::regex_match(route_summary.c_str(), m, re_dest))
+		destination_airport = m[1];
+	else
+		std::cout << "unable to parse destination airport" << std::endl;
+
+	const std::string RE_ROUTE_STR = ".*\"route\":\"([A-Z0-9\\s]+)\".*";
+	auto re_route = std::regex(RE_ROUTE_STR);
+	if (std::regex_match(route_summary.c_str(), m, re_route))
+		route_points_list = m[1];
+	else
+		std::cout << "unable to parse route points" << std::endl;
+
+	std::cout << departure_airport << " -> " << route_points_list << " -> " << destination_airport << std::endl;
+	std::string input_line;
+	std::cout << "import flight from simbrief (y/n)?" << std::endl;
+	std::getline(std::cin, input_line);
+	if (input_line != "y" && input_line != "Y")
+		return false;
+
+	//Set departure airport
+	if (!navdata_parser.get_airport_by_icao_id(departure_airport, flight_route.departure_airport))
+	{
+		std::cout << "error: can't find departure airport: " << departure_airport << std::endl;
+		return false;
+	}
+
+	//Set destination Airport
+	if (!navdata_parser.get_airport_by_icao_id(destination_airport, flight_route.destination_airport))
+	{
+		std::cout << "error: can't find destination airport: " << destination_airport << std::endl;
+		return false;
+	}
+
+	//Parse route points including SID and STAR IDs:
+	std::regex re("\\s+");
+	std::sregex_token_iterator it{ route_points_list.begin(), route_points_list.end(), re, -1 };
+	std::vector<std::string> parsed_parameters{ it, {} };
+
+	//Clear all previous route points
+	flight_route.enroute_points.clear();
+
+	//SID has 6 letter ID
+	if ((*(parsed_parameters.begin())).size() == 6)
+	{
+		std::vector<std::string> sid_param;
+		sid_param.emplace_back(*(parsed_parameters.begin()));
+		if (!handle_set_sid("SET", "SID", sid_param))
+			return false;
+		parsed_parameters.erase(parsed_parameters.begin());
+	}
+
+	//STAR has 6 letter ID
+	if ((*(parsed_parameters.end() - 1)).size() == 6)
+	{
+		std::vector<std::string> star_param;
+		star_param.emplace_back(*(parsed_parameters.end() - 1));
+		if (!handle_set_star("SET", "STAR", star_param))
+			return false;
+		parsed_parameters.erase(parsed_parameters.end() - 1);
+	}
+
+	return handle_route_add("ROUTE", "ADD", parsed_parameters);
+}
+
 bool CommandParser::handle_help(std::string sub_command)
 {
 	if (sub_command == "")
@@ -1113,6 +1218,7 @@ CommandParser::CommandParser(XPlaneParser& _navdata_parser) :
 	command_handlers["EXPORT__FLIGHT_PLAN"] = &CommandParser::handle_export_flight_plan;
 	command_handlers["SAVE__FLIGHT_PLAN"] = &CommandParser::handle_save_flight_plan;
 	command_handlers["LOAD__FLIGHT_PLAN"] = &CommandParser::handle_load_flight_plan;
+	command_handlers["LOAD__SIMBRIEF"] = &CommandParser::handle_load_simbrief;
 
 	command_handlers["SET__OPTION"] = &CommandParser::handle_set_option;
 	command_handlers["SET__DEP"] = &CommandParser::handle_set_departure;
