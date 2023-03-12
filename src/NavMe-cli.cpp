@@ -74,6 +74,10 @@ int main(void) {
     navdata_parser.parse_earth_fix_dat_file();
     std::cout << "DONE" << std::endl;
     
+    std::cout << "Parse apt data: ";
+    navdata_parser.parse_apt_dat_file();
+    std::cout << "DONE" << std::endl;
+
     std::cout << "Nr of navigation point: " << navdata_parser.get_nav_points().size() << std::endl;
     Logger(logINFO) << "CLI: Nr of navigation point: " << navdata_parser.get_nav_points().size() << std::endl;
 
@@ -96,9 +100,11 @@ int main(void) {
             Logger(logINFO) << "CLI: command: " << line << std::endl;
             cmd_parser.parse_and_dispatch_command(line);
         }
-        catch (...) {
+        catch (const std::exception& e) {
             std::cout << "error occurred while parsing command: " << line << std::endl;
-            Logger(logINFO) << "CLI:error occurred while parsing command: " << line << std::endl;
+            std::cout << "  -->" << e.what() << std::endl;
+            Logger(logERROR) << "CLI:error occurred while parsing command: " << line << std::endl;
+            Logger(logERROR) << "execption: " << e.what() << std::endl;
         }
 
         std::cout << "# ";
