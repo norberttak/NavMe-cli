@@ -63,15 +63,16 @@ private:
 	std::list<std::string> _airport_files_parsed;
 	std::filesystem::path absolute_path(std::string root_folder, std::string nav_folder, std::string file_name);
 	void trim_line(std::string& line);
-	void parse_rwy_line(std::cmatch& m, Airport* apt_ptr);
 	void parse_proc_line(std::cmatch& m, std::string airport_iaco_id);
 	void parse_approach_proc_line(std::cmatch& m, std::string airport_iaco_id);
 	bool parse_airport_file(std::string airport_icao_code);
 	Airport* get_airport_ptr(std::string airport_icao_code);
+	std::string normalize_rwy_name(std::string name);
 public:
 	XPlaneParser(std::string _xplane_root_folder);
 	bool parse_earth_fix_dat_file();
 	bool parse_earth_nav_dat_file();
+	bool parse_apt_dat_file();
 	std::list<std::string> get_list_of_airport_iaco_codes();
 	std::list<NavPoint> get_nav_points_by_icao_id(std::string icao_id);
 	std::list<NavPoint> get_nav_points_by_icao_id(std::string region, std::string icao_id);
