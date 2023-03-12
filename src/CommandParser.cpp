@@ -133,14 +133,30 @@ bool CommandParser::handle_export_flight_plan_html(std::string main_cmd, std::st
 {
 	HtmlTemplateParameters html_template;
 
-	html_template.departure = flight_route.departure_airport.get_icao_id();
+	html_template.departure = flight_route.departure_airport.get_icao_id() + "/" 
+							+ flight_route.departure_airport.get_iata_id() + " "
+							+ flight_route.departure_airport.get_name() + ", "
+							+ flight_route.departure_airport.get_country();
 
-	html_template.destination = flight_route.destination_airport.get_icao_id();
+	for (auto& rwy : flight_route.departure_airport.get_runways())
+	{
+		html_template.departure += "<br> Runway " + rwy.get_name() + ": ";
+		html_template.departure += " course:" + std::to_string(rwy.get_course()) +
+			", ILS:" + (rwy.get_ils_freq() == 0 ? "no ILS" : std::to_string(rwy.get_ils_freq())) +
+			", length:" + std::to_string(rwy.get_length()) + "m";
+	}
+
+	html_template.destination = flight_route.destination_airport.get_icao_id() + "/" 
+							+ flight_route.destination_airport.get_iata_id() + " "
+							+ flight_route.destination_airport.get_name() + ", "
+							+ flight_route.destination_airport.get_country();
+
 	for (auto& rwy : flight_route.destination_airport.get_runways())
 	{
 		html_template.destination += "<br> Runway " + rwy.get_name() + ": ";
-		if (rwy.get_ils_freq() != 0)
-			html_template.destination += " course:" + std::to_string(rwy.get_course()) + ", ILS:" + std::to_string(rwy.get_ils_freq());
+		html_template.destination += " course:" + std::to_string(rwy.get_course()) + 
+									", ILS:" + (rwy.get_ils_freq()==0?"no ILS":std::to_string(rwy.get_ils_freq())) +
+									", length:" + std::to_string(rwy.get_length()) + "m";
 	}
 
 	html_template.title = flight_route.departure_airport.get_icao_id() + "-" + flight_route.destination_airport.get_icao_id();
@@ -257,8 +273,8 @@ bool CommandParser::handle_show_flight_plan(std::string main_cmd, std::string su
 	Coordinate last_point_coordinate;
 
 	std::cout << "#########################################" << std::endl;
-	std::cout << "departure:  " << flight_route.departure_airport.get_name() << flight_route.departure_airport.get_icao_id() << std::endl;
-	std::cout << "destination:" << flight_route.destination_airport.get_name() << flight_route.destination_airport.get_icao_id() << std::endl;
+	std::cout << "departure:  " << flight_route.departure_airport.get_name() << " " << flight_route.departure_airport.get_icao_id() << std::endl;
+	std::cout << "destination:" << flight_route.destination_airport.get_name() << " " << flight_route.destination_airport.get_icao_id() << std::endl;
 
 	if (flight_route.departure_airport.get_icao_id() != "" && flight_route.destination_airport.get_icao_id() != "") {
 		last_point_coordinate = flight_route.departure_airport.get_coordinate();
@@ -473,19 +489,17 @@ bool CommandParser::handle_show_info(std::string main_cmd, std::string sub_cmd, 
 	if (navdata_parser.get_airport_by_icao_id(parameters[0], airport))
 	{
 		std::cout << "airport: " << airport.get_icao_id() << " " << airport.get_icao_region() << " " << airport.get_coordinate().to_string() << std::endl;
+		std::cout << airport.get_name() << ", " << airport.get_country() << "/" << airport.get_state() << "/" << airport.get_city() << std::endl;
+		std::cout << "iata: " << (airport.get_iata_id() == "" ? "no IATA code" : airport.get_iata_id()) << std::endl;
 		std::cout << "  elevation: " << airport.get_coordinate().elevation << " ft" << std::endl;
 		std::cout << "  magnetic variation: " << airport.get_magnetic_variation().to_string(false) << std::endl;
 
 		for (Runway& rwy : airport.get_runways())
 		{
-			if (rwy.get_ils_freq() != 0)
-			{
-				std::cout << "  " << rwy.get_name() << " course:" << rwy.get_course() << " ils freq: " << rwy.get_ils_freq() << std::endl;
-			}
-			else
-			{
-				std::cout << "  " << rwy.get_name() << std::endl;
-			}
+			std::cout << "  " << rwy.get_name() <<
+				" course:" << rwy.get_course() << 
+				" ils freq: " << (rwy.get_ils_freq() == 0 ? "no ILS" :  std::to_string(rwy.get_ils_freq()) ) <<
+				" length: " << rwy.get_length() << "m" << std::endl;
 		}
 	}
 	return true;
