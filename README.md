@@ -15,6 +15,8 @@ XPLANE_ROOT=C:\X-Plane 12
 ANGLE_FORMAT=ANGLE_DEG_DECMIN
 LOG_LEVEL=INFO
 AVWX_API_TOKEN=xxxxxxx
+SIMBRIEF_USER_ID=00000000
+
 ```
 Please double check the first element (XPLANE_ROOT) is the valid path to your XPlane's root folder.
 
@@ -37,14 +39,19 @@ Possible option values:
 
 The TRACE has the most detailed log level but it can generate huge log file. Use this only in case of detailed debugging.
 
+AVWX_API_TOKEN is an API token which allows you to query METAR and TAF live data from AVWX services. See details ad [show metar](#show_metar) command
+
+SIMBRIEF_USER_ID contains your numeric user id on www.simbrief.com. See details at [load simbrief](#load_simbrief) command.
+
 The configuration values can also be set during runtime. see details in [set_option](#set_option).
 ## Navigation data source
 It uses the navigation data of your XPlane simulator. It parses the navigation data at startup time.
 The files being parsed are:
 - Custom Data/earth_fix.dat
 - Custom Data/earth_nav.dat
+- Global Scenery/Global Airports/Earth nav data/apt.dat
 - Custom Data/CIFP/*.dat (on demand, if need info about an airport)
-
+ 
 If you want to use the NaveME-CLI on other computer you can copy the above files from your XPlane (keep the directory structure)
 to the other computer and edit the navme-cli.ini file to set the XPLANE_ROOT option.
 
@@ -184,7 +191,7 @@ approach: I31R-NICRA
   BP865 N47°17.6' E19°29.9'
 ```
 
-#### show metar
+#### show metar {#show_metar}
 This command fetches the actual METAR from AVWX services. Use the icao 
 id of airport as a parameter:
 ```
@@ -381,7 +388,7 @@ select route file index:
 ? 1
 ```
 
-#### load simbrief
+#### load simbrief {#load_simbrief}
 Load your latest OFP from www.simbrief.com. Before use this command please set your 
 SIMBRIEF_USER_ID (this shall be a six digit numeric value) in the config file.
 If you don't know your simbrief userID (or PilotID) open the [account page](https://dispatch.simbrief.com/account) and there you can
