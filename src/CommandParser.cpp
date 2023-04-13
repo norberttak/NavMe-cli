@@ -15,6 +15,10 @@
 #include "CommandParser.h"
  //#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 
 #define KM_TO_NM 0.5399568
 
@@ -543,20 +547,11 @@ bool CommandParser::handle_show_metar_taf(std::string main_cmd, std::string sub_
 		std::cout << "error: webserver return status: " << httplib::detail::status_message(res->status) << std::endl;
 		return false;
 	}
-
-	const std::string RE_METAR_STR = ".+\"sanitized\":\"(.+)\"\\}";
-	auto re_metar = std::regex(RE_METAR_STR);
-	std::cmatch m;
-	if (std::regex_match(res->body.c_str(), m, re_metar))
-	{
-		std::cout << m[1] << std::endl;
-		return true;
-	}
-	else
-	{
-		std::cout << "error: unable to query metar" << std::endl;
-		return false;
-	}
+	//{"meta":{"timestamp":"2023-04-13T16:54:04.006446Z","stations_updated":"2023-03-11"},"sanitized":"BIKF 131630Z 01012KT 9999 BKN048 BKN190 06/00 Q1007"}
+	json response_data = json::parse(res->body);
+	std::string metar = response_data.value("sanitized", "unknown metar");
+	std::cout << metar << std::endl;
+	return true;
 }
 
 bool CommandParser::handle_set_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
