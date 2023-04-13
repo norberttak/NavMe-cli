@@ -15,6 +15,10 @@
 #include "CommandParser.h"
  //#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 
 #define KM_TO_NM 0.5399568
 
@@ -543,20 +547,12 @@ bool CommandParser::handle_show_metar_taf(std::string main_cmd, std::string sub_
 		std::cout << "error: webserver return status: " << httplib::detail::status_message(res->status) << std::endl;
 		return false;
 	}
-
-	const std::string RE_METAR_STR = ".+\"sanitized\":\"(.+)\"\\}";
-	auto re_metar = std::regex(RE_METAR_STR);
-	std::cmatch m;
-	if (std::regex_match(res->body.c_str(), m, re_metar))
-	{
-		std::cout << m[1] << std::endl;
-		return true;
-	}
-	else
-	{
-		std::cout << "error: unable to query metar" << std::endl;
-		return false;
-	}
+	
+	//{"meta":{"timestamp":"2023-04-13T16:54:04.006446Z","stations_updated":"2023-03-11"},"sanitized":"BIKF 131630Z 01012KT 9999 BKN048 BKN190 06/00 Q1007"}
+	json response_data = json::parse(res->body);
+	std::string metar = response_data.value("sanitized", "unknown metar");
+	std::cout << metar << std::endl;
+	return true;
 }
 
 bool CommandParser::handle_set_option(std::string main_cmd, std::string sub_cmd, std::vector<std::string> parameters)
@@ -1107,35 +1103,13 @@ bool CommandParser::handle_load_simbrief(std::string main_cmd, std::string sub_c
 		return false;
 	}
 
-	std::string route_summary = res->body;
-	std::string departure_airport = "";
-	std::string destination_airport = "";
-	std::string route_points_list = "";
-
-	std::cmatch m;
-
-	const std::string RE_DEP_STR = ".*\"orig\":\"([A-Z]+)\".*";
-	auto re_dep = std::regex(RE_DEP_STR);
-	if (std::regex_match(route_summary.c_str(), m, re_dep))
-		departure_airport = m[1];
-	else
-		std::cout << "unable to parse departure airport" << std::endl;
-
-	const std::string RE_DEST_STR = ".*\"dest\":\"([A-Z]+)\".*";
-	auto re_dest = std::regex(RE_DEST_STR);
-	if (std::regex_match(route_summary.c_str(), m, re_dest))
-		destination_airport = m[1];
-	else
-		std::cout << "unable to parse destination airport" << std::endl;
-
-	const std::string RE_ROUTE_STR = ".*\"route\":\"([A-Z0-9\\s]+)\".*";
-	auto re_route = std::regex(RE_ROUTE_STR);
-	if (std::regex_match(route_summary.c_str(), m, re_route))
-		route_points_list = m[1];
-	else
-		std::cout << "unable to parse route points" << std::endl;
+	json response_data = json::parse(res->body);
+	std::string departure_airport   = response_data["api_params"]["orig"];
+	std::string destination_airport = response_data["api_params"]["dest"];
+	std::string route_points_list   = response_data["api_params"]["route"];
 
 	std::cout << departure_airport << " -> " << route_points_list << " -> " << destination_airport << std::endl;
+
 	std::string input_line;
 	std::cout << "import flight from simbrief (y/n)?" << std::endl;
 	std::getline(std::cin, input_line);
